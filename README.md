@@ -1,8 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FitGym - Mobile PWA for Gym Booking
 
-## Getting Started
+A beautiful, modern Progressive Web App for booking gym sessions with Google authentication.
 
-First, run the development server:
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your Firebase credentials
+
+# Run development server
+npm run dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000)
+
+## Key Features
+
+- 🔐 **Google Sign-in** with Firebase
+- 📱 **Mobile-First UI** - Optimized for phones
+- 💾 **PWA Ready** - Installable, offline support
+- ⚡ **Fast** - Next.js 15 with Turbopack
+- 🎨 **Beautiful** - Tailwind CSS + Lucide Icons
+- 🌐 **Responsive** - Works on all devices
+
+## Pages
+
+- `/` - Home (redirects to login/dashboard)
+- `/auth/login` - Google login
+- `/dashboard` - User dashboard (protected)
+
+## Setup
+
+See [SETUP.md](./SETUP.md) for detailed setup instructions.
+
+## Building & Deployment
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+Deploy to Vercel, Netlify, or any Node.js hosting.
+
+## Technologies
+
+- **Framework**: Next.js 15
+- **Auth**: Firebase
+- **Styling**: Tailwind CSS 4
+- **State**: Zustand
+- **HTTP**: Axios
+- **Icons**: Lucide React
+- **PWA**: Service Workers
+
+## Project Structure
+
+```
+app/
+├── auth/login/          # Login page
+├── dashboard/           # Main app
+├── layout.tsx          # Root layout
+└── page.tsx            # Home redirect
+
+lib/
+├── api/client.ts       # API client
+├── firebase/config.ts  # Firebase setup
+└── store/authStore.ts  # State management
+```
 
 ```bash
 npm run dev
