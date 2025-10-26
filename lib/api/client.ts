@@ -36,6 +36,8 @@ export const authAPI = {
     apiClient.post('/auth/google', { firebaseToken }),
   updateProfile: (userId: string, data: { mobileNumber?: string; name?: string }) =>
     apiClient.patch(`/auth/profile/${userId}`, data),
+  registerGymOwner: (firebaseToken: string, data: { gymName: string }) =>
+    apiClient.post('/auth/register-gym-owner', { firebaseToken, ...data }),
 };
 
 export default apiClient;

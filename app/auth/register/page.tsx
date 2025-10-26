@@ -8,14 +8,12 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { authAPI } from "@/lib/api/client";
 import Button from "@/components/button";
 import { Loader } from "lucide-react";
-import Lottie from "lottie-react";
-import lottieData from "./lifestyle_of_when_weighing_gym.json";
-import { Spinner } from "@/components/ui/spinner"
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const { setUser, setToken, setLoading, setError, isLoading } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
+  const [gymName, setGymName] = useState("");
 
   const handleGoogleLogin = async () => {
     try {
@@ -26,31 +24,23 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseToken = await result.user.getIdToken();
 
-      const response = await authAPI.loginWithGoogle(firebaseToken);
+      const response = await authAPI.registerGymOwner(firebaseToken, { gymName });
       const { user: userData, token: jwtToken } = response.data;
 
       setUser(userData);
       setToken(jwtToken);
       router.push("/dashboard");
     } catch (err: any) {
-      const message = err.response?.data?.message || err.message || "Login failed";
+      const message = err.response?.data?.message || err.message || "Registration failed";
       setLocalError(message);
       setError(message);
     } finally {
-      // Ensures loading state is turned off after success or failure
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-end font-sans overflow-hidden">
-      {/* Lottie Animation as a visual centerpiece */}
-      <div className="absolute inset-0 flex items-center justify-center -mt-20 pointer-events-none">
-        <div className="w-full max-w-lg">
-          <Lottie animationData={lottieData} loop={true} />
-        </div>
-      </div>
-
       {/* Content section anchored to the bottom */}
       <div className="relative z-10 w-full max-w-md p-6 sm:p-8 space-y-8">
         {/* App Name and Tagline */}
@@ -58,11 +48,19 @@ export default function LoginPage() {
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 text-transparent bg-clip-text">
             BookMyGyms
           </h1>
-          <p className="text-gray-900 mt-2">Your gateway to ultimate fitness.</p>
+          <p className="text-gray-900 mt-2">Register your gym and reach more customers.</p>
         </div>
 
-        {/* Action Area: Error Message and Login Button */}
+        {/* Gym Name Input */}
         <div className="space-y-4">
+          <input
+            type="text"
+            value={gymName}
+            onChange={(e) => setGymName(e.target.value)}
+            placeholder="Enter your gym name"
+            className="w-full p-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          />
+
           {localError && (
             <div className="bg-red-900/30 border border-red-700/50 text-red-300 text-sm p-3 rounded-lg text-center">
               <p>{localError}</p>
@@ -73,12 +71,12 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 py-3 px-4"
             aria-label="Continue with Google"
-            disabled={isLoading}
+            disabled={isLoading || !gymName.trim()}
           >
             {isLoading ? (
               <>
-                <Spinner className="w-5 h-5" />
-                <span className="text-sm">Signing in...</span>
+                <Loader className="w-5 h-5 animate-spin" />
+                <span className="text-sm">Registering...</span>
               </>
             ) : (
               <div className="flex items-center gap-2">
@@ -87,21 +85,11 @@ export default function LoginPage() {
                   alt="Google logo"
                   className="w-5 h-5"
                 />
-                <span className="text-sm">Continue with Google</span>
+                <span className="text-sm">Continue as Gym Owner</span>
               </div>
             )}
           </Button>
         </div>
-      </div>
-
-      {/* Top-right link to registration page */}
-      <div className="absolute top-4 right-4">
-        <a
-          href="/auth/register"
-          className="text-sm font-medium text-gray-900 underline hover:text-gray-700"
-        >
-          List My Gym
-        </a>
       </div>
     </div>
   );
