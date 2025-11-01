@@ -34,38 +34,38 @@ export default function NotificationsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-2xl px-4 py-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Notifications</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Stay updated with your gym activities</p>
+          <h1 className="text-2xl font-bold">Notifications</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Stay updated with your gym activities</p>
         </div>
 
         {/* Notification List */}
-        <div className="mb-24 space-y-3">
+        <div className="space-y-4">
           {notifications.length > 0 ? (
             notifications.map((notification) => (
-              <Card key={notification.id}>
-                <CardHeader>
-                  <CardTitle className={`${!notification.read ? 'font-semibold' : 'font-medium'}`}>
-                    {notification.title}
-                  </CardTitle>
-                  <CardDescription>{notification.timestamp}</CardDescription>
+              <Card key={notification.id} className="border-muted">
+                <CardHeader className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className={`${!notification.read ? 'font-bold' : 'font-medium'}`}>
+                      {notification.title}
+                    </CardTitle>
+                    <CardDescription>{notification.timestamp}</CardDescription>
+                  </div>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                    ✕
+                  </Button>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {notification.message}
-                  </p>
+                  <p>{notification.message}</p>
                 </CardContent>
-                <Button variant="ghost" className="ml-2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0">
-                  ✕
-                </Button>
               </Card>
             ))
           ) : (
             <Card className="p-8 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">No notifications yet</p>
+              <p className="text-sm text-muted-foreground">No notifications yet</p>
             </Card>
           )}
         </div>
