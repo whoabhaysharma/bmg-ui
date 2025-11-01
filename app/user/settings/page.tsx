@@ -1,5 +1,5 @@
-import Card from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function SettingsPage() {

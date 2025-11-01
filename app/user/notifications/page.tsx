@@ -1,4 +1,4 @@
-import Card from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export default function NotificationsPage() {
@@ -46,35 +46,21 @@ export default function NotificationsPage() {
         <div className="mb-24 space-y-3">
           {notifications.length > 0 ? (
             notifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`p-4 transition-all ${
-                  !notification.read ? 'bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700' : ''
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`${!notification.read ? 'font-semibold' : 'font-medium'} text-gray-900 dark:text-white`}>
-                        {notification.title}
-                      </h3>
-                      {!notification.read && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-gray-900 dark:bg-white flex-shrink-0"></span>
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      {notification.message}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                      {notification.timestamp}
-                    </p>
-                  </div>
-
-                  {/* Close Button */}
-                  <Button variant="ghost" className="ml-2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0">
-                    ✕
-                  </Button>
-                </div>
+              <Card key={notification.id}>
+                <CardHeader>
+                  <CardTitle className={`${!notification.read ? 'font-semibold' : 'font-medium'}`}>
+                    {notification.title}
+                  </CardTitle>
+                  <CardDescription>{notification.timestamp}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {notification.message}
+                  </p>
+                </CardContent>
+                <Button variant="ghost" className="ml-2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0">
+                  ✕
+                </Button>
               </Card>
             ))
           ) : (
