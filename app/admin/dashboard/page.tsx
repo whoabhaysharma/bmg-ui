@@ -2,9 +2,8 @@
 
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
-import { withAuth } from '@/lib/auth/withAuth';
 
-function AdminDashboard() {
+export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-6">
       <Card className="p-6">
@@ -19,5 +18,3 @@ function AdminDashboard() {
     </div>
   )
 }
-
-export default withAuth(AdminDashboard, 'OWNER');
