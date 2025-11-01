@@ -6,8 +6,7 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase/config";
 import { useAuthStore } from "@/lib/store/authStore";
 import { authAPI } from "@/lib/api/client";
-import Button from "@/components/button";
-import { Loader } from "lucide-react";
+import Button from "@/components/ui/button";
 import Lottie from "lottie-react";
 import lottieData from "./lifestyle_of_when_weighing_gym.json";
 import { Spinner } from "@/components/ui/spinner"
@@ -29,9 +28,21 @@ export default function LoginPage() {
       const response = await authAPI.loginWithGoogle(firebaseToken);
       const { user: userData, token: jwtToken } = response.data;
 
+      // Save auth data to localStorage immediately
+      localStorage.setItem('authUser', JSON.stringify(userData));
+      localStorage.setItem('authToken', jwtToken);
+
+      // Update Zustand store
       setUser(userData);
       setToken(jwtToken);
-      router.push("/dashboard");
+
+      // Determine dashboard path based on role
+      const dashboardPath = userData.role === 'OWNER' ? '/admin/dashboard' : '/user/dashboard';
+      
+      // Use setTimeout to ensure state is updated before redirect
+      setTimeout(() => {
+        router.push(dashboardPath);
+      }, 100);
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || "Login failed";
       setLocalError(message);
@@ -92,16 +103,6 @@ export default function LoginPage() {
             )}
           </Button>
         </div>
-      </div>
-
-      {/* Top-right link to registration page */}
-      <div className="absolute top-4 right-4">
-        <a
-          href="/auth/register"
-          className="text-sm font-medium text-gray-900 underline hover:text-gray-700"
-        >
-          List My Gym
-        </a>
       </div>
     </div>
   );

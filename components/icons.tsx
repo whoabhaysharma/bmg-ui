@@ -22,3 +22,4 @@ export const Icon: React.FC<{ name: LucideIconName; className?: string } & React
 export { LogIn, User, Calendar, MapPin, CreditCard, Server } from 'lucide-react';
 
 export default Icon;
+    
