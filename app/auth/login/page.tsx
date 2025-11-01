@@ -6,7 +6,7 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase/config";
 import { useAuthStore } from "@/lib/store/authStore";
 import { authAPI } from "@/lib/api/client";
-import Button from "@/components/ui/button";
+import {Button} from "@/components/ui/button";
 import Lottie from "lottie-react";
 import lottieData from "./lifestyle_of_when_weighing_gym.json";
 import { Spinner } from "@/components/ui/spinner"
