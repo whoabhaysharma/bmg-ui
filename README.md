@@ -70,7 +70,6 @@ app/
 
 lib/
 ├── api/client.ts       # API client
-├── firebase/config.ts  # Firebase setup
 └── store/authStore.ts  # State management
 ```
 
