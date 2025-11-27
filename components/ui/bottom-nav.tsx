@@ -22,9 +22,10 @@ const USER_NAV_ITEMS: NavItem[] = [
 
 const OWNER_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/owner/dashboard', icon: 'LayoutDashboard' },
-  { label: 'My Gyms', href: '/owner/gyms', icon: 'Dumbbell' },
+  { label: 'Members', href: '/owner/members', icon: 'Users' },
   { label: 'Plans', href: '/owner/plans', icon: 'CreditCard' },
-  { label: 'Profile', href: '/owner/profile', icon: 'User' },
+  { label: 'Checkin', href: '/owner/checkin', icon: 'ScanLine' },
+  { label: 'More', href: '/owner/more', icon: 'Menu' },
 ];
 
 const ADMIN_NAV_ITEMS: NavItem[] = [

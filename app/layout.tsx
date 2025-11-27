@@ -55,7 +55,6 @@ export default function RootLayout({
       >
         <Providers>
           {children}
-          <BottomNav />
         </Providers>
       </body>
     </html>
