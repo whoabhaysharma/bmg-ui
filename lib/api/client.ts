@@ -32,12 +32,12 @@ apiClient.interceptors.response.use(
 );
 
 export const authAPI = {
-  loginWithGoogle: (firebaseToken: string) =>
-    apiClient.post('/auth/google', { firebaseToken }),
+  sendOtp: (phoneNumber: string) =>
+    apiClient.post('/auth/send-otp', { phoneNumber }),
+  verifyOtp: (phoneNumber: string, otp: string) =>
+    apiClient.post('/auth/verify-otp', { phoneNumber, otp }),
   updateProfile: (userId: string, data: { mobileNumber?: string; name?: string }) =>
     apiClient.patch(`/auth/profile/${userId}`, data),
-  registerGymOwner: (firebaseToken: string, data: { gymName: string }) =>
-    apiClient.post('/auth/register-gym-owner', { firebaseToken, ...data }),
 };
 
 export default apiClient;

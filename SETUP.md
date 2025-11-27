@@ -1,11 +1,11 @@
 # FitGym UI - Mobile-First PWA
 
-A modern, mobile-first Progressive Web App for booking gym sessions using Next.js, Firebase Authentication, and Tailwind CSS.
+A modern, mobile-first Progressive Web App for booking gym sessions using Next.js, Mobile Authentication, and Tailwind CSS.
 
 ## Features
 
 ✨ **Mobile-First Design** - Optimized for mobile devices  
-🔐 **Firebase Google Auth** - Secure authentication  
+🔐 **Mobile Auth** - Secure authentication with OTP
 💾 **PWA Support** - Works offline, installable  
 🎨 **Modern UI** - Responsive, accessible components  
 📱 **Touch-Friendly** - Large buttons and easy navigation  
@@ -17,7 +17,8 @@ A modern, mobile-first Progressive Web App for booking gym sessions using Next.j
 gym-ui/
 ├── app/
 │   ├── auth/
-│   │   └── login/           # Login page
+│   │   ├── login/           # Login page
+│   │   └── verify-otp/      # OTP verification page
 │   ├── dashboard/           # Main dashboard
 │   ├── layout.tsx           # Root layout with PWA setup
 │   ├── page.tsx            # Home page (redirects)
@@ -25,8 +26,6 @@ gym-ui/
 ├── lib/
 │   ├── api/
 │   │   └── client.ts       # API client with interceptors
-│   ├── firebase/
-│   │   └── config.ts       # Firebase initialization
 │   └── store/
 │       └── authStore.ts    # Zustand auth store
 ├── public/
@@ -44,31 +43,16 @@ cd gym-ui
 npm install
 ```
 
-### 2. Firebase Configuration
+### 2. Backend Configuration
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Go to Project Settings → Your apps → Web
-4. Copy your Firebase config
-5. Create `.env.local` file:
+1. Make sure your backend is running and accessible.
+2. Create `.env.local` file:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
 ```
 
-### 3. Enable Google Sign-In in Firebase
-
-1. Go to Firebase Console → Authentication → Sign-in Method
-2. Enable Google provider
-3. Add your domain to authorized domains
-
-### 4. Run Development Server
+### 3. Run Development Server
 
 ```bash
 npm run dev
@@ -79,7 +63,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Pages
 
 ### Login Page (`/auth/login`)
-- Google authentication
+- Mobile number authentication
+- Beautiful gradient UI
+- Mobile-optimized
+- Error handling
+
+### Verify OTP Page (`/auth/verify-otp`)
+- OTP verification
 - Beautiful gradient UI
 - Mobile-optimized
 - Error handling
@@ -92,14 +82,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Authentication Flow
 
-1. User clicks "Continue with Google"
-2. Firebase OAuth dialog opens
-3. User signs in with Google account
-4. Frontend receives Firebase ID token
-5. Token sent to backend `/api/auth/google`
-6. Backend verifies token and returns JWT
-7. User logged in with JWT token
-8. Redirected to dashboard
+1. User enters their phone number and clicks "Continue"
+2. The app sends a request to `/api/auth/send-otp`
+3. The user is redirected to the verify-otp page
+4. The user enters the OTP they received
+5. The app sends a request to `/api/auth/verify-otp`
+6. Backend verifies the OTP and returns a JWT
+7. User is logged in with the JWT token
+8. Redirected to their respective dashboard
 
 ## PWA Features
 
@@ -140,11 +130,11 @@ The API client automatically:
 ```typescript
 import { authAPI } from '@/lib/api/client';
 
-// Login with Firebase token
-const response = await authAPI.loginWithGoogle(firebaseToken);
+// Send OTP
+const response = await authAPI.sendOtp(phoneNumber);
 
-// Update profile
-await authAPI.updateProfile(userId, { mobileNumber: '+91...' });
+// Verify OTP
+await authAPI.verifyOtp(phoneNumber, otp);
 ```
 
 ## Styling
@@ -172,9 +162,6 @@ npm start
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API Key |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Project ID |
 | `NEXT_PUBLIC_API_BASE_URL` | Backend API URL |
 
 ## Browser Support
@@ -185,16 +172,6 @@ npm start
 - Mobile browsers (iOS Safari 13+, Chrome Android)
 
 ## Troubleshooting
-
-### Firebase Auth Not Working
-- Check Firebase config in `.env.local`
-- Ensure Google provider is enabled in Firebase Console
-- Verify domain is authorized
-
-### PWA Not Installable
-- Must be served over HTTPS (except localhost)
-- Check browser console for service worker errors
-- Verify `manifest.json` is valid
 
 ### API Calls Failing
 - Ensure backend is running on `NEXT_PUBLIC_API_BASE_URL`
