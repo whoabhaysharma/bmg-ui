@@ -67,10 +67,16 @@ export default function LoginPage() {
             <Input
               type="tel"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^\d*$/.test(value)) {
+                  setPhoneNumber(value);
+                }
+              }}
               placeholder="Enter your 10-digit phone number"
               className="w-full"
               maxLength={10}
+              pattern="[0-9]*"
             />
           </div>
 
