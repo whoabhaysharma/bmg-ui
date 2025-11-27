@@ -3,8 +3,12 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
 import { useAuthStore } from '@/lib/store/authStore';
 import { authAPI } from '@/lib/api/client';
 import Lottie from 'lottie-react';
@@ -72,21 +76,27 @@ function VerifyOtpContent() {
           </div>
         )}
 
-        <div className="space-y-2">
-          <Input
-            type="text"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="Enter the 6-digit OTP"
-            className="w-full text-center"
+        <div className="flex justify-center">
+          <InputOTP
             maxLength={6}
-          />
+            value={otp}
+            onChange={(value) => setOtp(value)}
+          >
+            <InputOTPGroup>
+              <InputOTPSlot index={0} />
+              <InputOTPSlot index={1} />
+              <InputOTPSlot index={2} />
+              <InputOTPSlot index={3} />
+              <InputOTPSlot index={4} />
+              <InputOTPSlot index={5} />
+            </InputOTPGroup>
+          </InputOTP>
         </div>
 
         <Button
           onClick={handleVerifyOtp}
           className="w-full flex items-center justify-center gap-3 py-3 px-4"
-          disabled={isLoading}
+          disabled={isLoading || otp.length < 6}
         >
           {isLoading ? (
             <>
