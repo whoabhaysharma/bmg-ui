@@ -25,17 +25,31 @@ function VerifyOtpContent() {
     }
   }, [phoneNumber, router]);
 
+  // ... (imports and component setup remain the same)
+
   const handleVerifyOtp = async () => {
     if (!otp || otp.length < 6) {
       setError('Please enter a valid 6-digit OTP.');
       return;
     }
 
+    // --- 👇 MODIFICATION START 👇 ---
+    const otpNumber = parseInt(otp, 10);
+    if (isNaN(otpNumber)) {
+      setError('Invalid OTP format.');
+      return;
+    }
+    // --- 👆 MODIFICATION END 👆 ---
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await authAPI.verifyOtp(phoneNumber!, otp);
+      // Pass the parsed number 'otpNumber' instead of the string 'otp'
+      // --- 👇 MODIFICATION START (Inside try block) 👇 ---
+      const response = await authAPI.verifyOtp(phoneNumber!, otpNumber);
+      // --- 👆 MODIFICATION END (Inside try block) 👆 ---
+
       // API returns structure { success: true, data: { token, user } }
       const { user: userData, token: jwtToken } = response.data.data;
 
@@ -55,6 +69,8 @@ function VerifyOtpContent() {
       setIsLoading(false);
     }
   };
+
+  // ... (rest of the component remains the same)
 
   return (
     <div className="relative z-10 w-full max-w-md p-6 sm:p-8 space-y-8">

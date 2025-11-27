@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { AuthGuard } from '@/components/auth/auth-guard';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -12,5 +13,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  return <>{children}</>;
+  return (
+    <AuthGuard>
+      {children}
+    </AuthGuard>
+  );
 }
