@@ -49,6 +49,8 @@ export const gymsAPI = {
   update: (id: string, data: { name?: string; address?: string }) =>
     apiClient.put(`/gyms/${id}`, data),
   delete: (id: string) => apiClient.delete(`/gyms/${id}`),
+  verify: (id: string) => apiClient.patch(`/gyms/${id}/verify`),
+  unverify: (id: string) => apiClient.patch(`/gyms/${id}/unverify`),
 };
 
 export const plansAPI = {
@@ -61,6 +63,7 @@ export const plansAPI = {
     price: number
   }) => apiClient.post('/plans', data),
   getByGymId: (gymId: string) => apiClient.get(`/plans?gymId=${gymId}`),
+  getActiveByGymId: (gymId: string) => apiClient.get(`/plans/active?gymId=${gymId}`),
   getById: (id: string) => apiClient.get(`/plans/${id}`),
   update: (id: string, data: Partial<{
     name: string;
@@ -71,6 +74,38 @@ export const plansAPI = {
     isActive: boolean;
   }>) => apiClient.put(`/plans/${id}`, data),
   delete: (id: string) => apiClient.delete(`/plans/${id}`),
+};
+
+export const usersAPI = {
+  getMe: () => apiClient.get('/users/me/profile'),
+  updateMe: (data: { name: string }) => apiClient.put('/users/me/profile', data),
+  getById: (id: string) => apiClient.get(`/users/${id}`),
+  getAll: (page = 1, limit = 10, includeDeleted = false) =>
+    apiClient.get(`/users?page=${page}&limit=${limit}&includeDeleted=${includeDeleted}`),
+  update: (id: string, data: { name: string }) => apiClient.put(`/users/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/users/${id}`),
+  restore: (id: string) => apiClient.post(`/users/${id}/restore`),
+  addRole: (id: string, role: string) => apiClient.post(`/users/${id}/role`, { role, action: 'add' }),
+  removeRole: (id: string, role: string) => apiClient.post(`/users/${id}/role`, { role, action: 'remove' }),
+};
+
+export const subscriptionsAPI = {
+  create: (data: { planId: string; gymId: string }) => apiClient.post('/subscriptions', data),
+  getMySubscriptions: () => apiClient.get('/subscriptions/my-subscriptions'),
+  getByGymId: (gymId: string) => apiClient.get(`/subscriptions?gymId=${gymId}`), // Speculative
+};
+
+export const paymentsAPI = {
+  verify: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    apiClient.post('/payments/verify', data),
+  getByGymId: (gymId: string) => apiClient.get(`/payments?gymId=${gymId}`), // Speculative
+};
+
+export const attendanceAPI = {
+  getMe: (gymId?: string) => apiClient.get(`/attendance/me${gymId ? `?gymId=${gymId}` : ''}`),
+  checkIn: (gymId: string) => apiClient.post(`/attendance/gym/${gymId}/check-in`),
+  checkOut: (attendanceId: string) => apiClient.post(`/attendance/${attendanceId}/check-out`),
+  getByGymId: (gymId: string) => apiClient.get(`/attendance?gymId=${gymId}`), // Speculative
 };
 
 export default apiClient;
