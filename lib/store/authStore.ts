@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'USER' | 'OWNER' | 'ADMIN';
+  roles: string[];
   mobileNumber: string;
 }
 
@@ -41,14 +41,21 @@ export const useAuthStore = create<AuthStore>()(
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
       logout: () => set({ user: null, token: null, error: null }),
       isAdmin: () => {
-        const role = get().user?.role;
-        return role === 'OWNER' || role === 'ADMIN';
+        const roles = get().user?.roles || [];
+        return roles.includes('OWNER') || roles.includes('ADMIN');
       },
-      isUser: () => get().user?.role === 'USER',
+      isUser: () => {
+        const roles = get().user?.roles || [];
+        return roles.includes('USER');
+      },
       getDashboardPath: () => {
         const user = get().user;
         if (!user) return '/auth/login';
-        return ['OWNER', 'ADMIN'].includes(user.role) ? '/admin/dashboard' : '/user/dashboard';
+
+        const roles = user.roles || [];
+        if (roles.includes('ADMIN')) return '/admin/dashboard';
+        if (roles.includes('OWNER')) return '/owner/dashboard';
+        return '/user/dashboard';
       },
     }),
     {

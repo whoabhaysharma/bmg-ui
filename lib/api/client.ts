@@ -34,10 +34,43 @@ apiClient.interceptors.response.use(
 export const authAPI = {
   sendOtp: (phoneNumber: string) =>
     apiClient.post('/auth/send-otp', { phoneNumber }),
-  verifyOtp: (phoneNumber: string, otp: string) =>
+  verifyOtp: (phoneNumber: string, otp: number) =>
     apiClient.post('/auth/verify-otp', { phoneNumber, otp }),
   updateProfile: (userId: string, data: { mobileNumber?: string; name?: string }) =>
     apiClient.patch(`/auth/profile/${userId}`, data),
+};
+
+export const gymsAPI = {
+  create: (data: { name: string; address: string; ownerId?: string }) =>
+    apiClient.post('/gyms', data),
+  getAll: () => apiClient.get('/gyms'),
+  getMyOwned: () => apiClient.get('/gyms/me/owned'),
+  getById: (id: string) => apiClient.get(`/gyms/${id}`),
+  update: (id: string, data: { name?: string; address?: string }) =>
+    apiClient.put(`/gyms/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/gyms/${id}`),
+};
+
+export const plansAPI = {
+  create: (data: {
+    gymId: string;
+    name: string;
+    description?: string;
+    durationValue: number;
+    durationUnit: 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
+    price: number
+  }) => apiClient.post('/plans', data),
+  getByGymId: (gymId: string) => apiClient.get(`/plans?gymId=${gymId}`),
+  getById: (id: string) => apiClient.get(`/plans/${id}`),
+  update: (id: string, data: Partial<{
+    name: string;
+    description: string;
+    durationValue: number;
+    durationUnit: 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
+    price: number;
+    isActive: boolean;
+  }>) => apiClient.put(`/plans/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/plans/${id}`),
 };
 
 export default apiClient;

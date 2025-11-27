@@ -25,16 +25,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             if (isAuthenticated) {
                 // If logged in and trying to access public auth pages, redirect to dashboard
                 if (isPublicPath || isRoot) {
-                    const dashboardPath = ['OWNER', 'ADMIN'].includes(user.role)
-                        ? '/admin/dashboard'
-                        : '/user/dashboard';
-                    router.replace(dashboardPath);
+                    const { getDashboardPath } = useAuthStore.getState();
+                    router.replace(getDashboardPath());
                     return;
                 }
             } else {
-                // If not logged in and trying to access private pages, redirect to login
-                if (!isPublicPath && !isRoot) {
-                    // Store the attempted URL to redirect back after login (optional enhancement)
+                // If not logged in and trying to access private pages or root, redirect to login
+                if (!isPublicPath) {
                     router.replace("/auth/login");
                     return;
                 }

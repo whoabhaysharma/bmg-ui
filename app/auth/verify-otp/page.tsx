@@ -59,8 +59,8 @@ function VerifyOtpContent() {
       setUser(userData);
       setToken(jwtToken);
 
-      const dashboardPath = ['OWNER', 'ADMIN'].includes(userData.role) ? '/admin/dashboard' : '/user/dashboard';
-      router.push(dashboardPath);
+      const { getDashboardPath } = useAuthStore.getState();
+      router.push(getDashboardPath());
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (err as any).response?.data?.message || (err as any).message || 'Failed to verify OTP';
