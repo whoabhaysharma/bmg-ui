@@ -1,13 +1,15 @@
 {
   "name": "FitGym - Book Gyms Near You",
   "short_name": "FitGym",
-  "description": "Book your perfect gym session with FitGym",
+  "description": "Book your perfect gym session with FitGym. Connect with gyms, track your fitness journey, and find the perfect workout venue.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#7c3aed",
   "background_color": "#ffffff",
+  "dir": "ltr",
+  "lang": "en-US",
   "icons": [
     {
       "src": "/icon-192x192.png",
