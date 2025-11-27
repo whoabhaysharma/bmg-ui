@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import Lottie from 'lottie-react';
 import lottieData from './lifestyle_of_when_weighing_gym.json';
+import { authAPI } from '@/lib/api/client';
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -28,8 +29,9 @@ export default function LoginPage() {
       await authAPI.sendOtp(phoneNumber);
       router.push(`/auth/verify-otp?phoneNumber=${phoneNumber}`);
       return;
-    } catch (err: any) {
-      const message = err.response?.data?.message || err.message || 'Failed to send OTP';
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const message = (err as any).response?.data?.message || (err as any).message || 'Failed to send OTP';
       setError(message);
     } finally {
       setIsLoading(false);

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Icon } from '@/components/icons';
+import { Icon, LucideIconName } from '@/components/icons';
 import React from 'react';
 
 type NavItem = {
@@ -59,7 +59,7 @@ export default function BottomNav() {
                 }`}
               >
                 <Icon
-                  name={item.icon as any}
+                  name={item.icon as LucideIconName}
                   className="w-6 h-6 mb-1"
                   strokeWidth={isActive ? 2.5 : 2}
                 />
