@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'USER' | 'OWNER';
+  role: 'USER' | 'OWNER' | 'ADMIN';
   mobileNumber: string;
 }
 
@@ -36,12 +36,15 @@ export const useAuthStore = create<AuthStore>()(
       setLoading: (loading) => set({ isLoading: loading }),
       setError: (error) => set({ error }),
       logout: () => set({ user: null, token: null, error: null }),
-      isAdmin: () => get().user?.role === 'OWNER',
+      isAdmin: () => {
+        const role = get().user?.role;
+        return role === 'OWNER' || role === 'ADMIN';
+      },
       isUser: () => get().user?.role === 'USER',
       getDashboardPath: () => {
         const user = get().user;
         if (!user) return '/auth/login';
-        return user.role === 'OWNER' ? '/admin/dashboard' : '/user/dashboard';
+        return ['OWNER', 'ADMIN'].includes(user.role) ? '/admin/dashboard' : '/user/dashboard';
       },
     }),
     {

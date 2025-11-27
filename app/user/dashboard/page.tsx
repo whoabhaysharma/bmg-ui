@@ -34,7 +34,7 @@ export default function UserDashboard() {
             </div>
             <div className="text-5xl">🔥</div>
           </div>
-          <p className="mt-4 text-xs font-medium opacity-75">Keep it up! You're on fire!</p>
+          <p className="mt-4 text-xs font-medium opacity-75">Keep it up! You&apos;re on fire!</p>
         </div>
 
         {/* Stats Row */}
