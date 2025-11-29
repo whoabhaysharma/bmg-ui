@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  User,
   CreditCard,
   MapPin,
   HelpCircle,
@@ -126,6 +124,20 @@ export default function SettingsPage() {
     router.push('/auth/login');
   };
 
+  const handleUpgradeToOwner = async () => {
+    if (!confirm('Are you sure you want to become a Gym Owner? This will enable owner features for your account.')) return;
+
+    try {
+      await usersAPI.upgradeToOwner();
+      alert('Congratulations! You are now a Gym Owner. Please sign in again to access the Owner Dashboard.');
+      logout();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Failed to upgrade to owner:', error);
+      alert('Failed to upgrade to owner. Please try again.');
+    }
+  };
+
   const isOwner = user?.roles?.includes('OWNER');
 
   const menuItems = [
@@ -150,7 +162,15 @@ export default function SettingsPage() {
               }
             }
           }]
-          : [{ title: 'Saved Addresses', description: 'Manage your gym locations', icon: MapPin }]
+          : [
+            { title: 'Saved Addresses', description: 'Manage your gym locations', icon: MapPin },
+            {
+              title: 'Become a Gym Owner',
+              description: 'Start managing your own gym',
+              icon: Dumbbell,
+              onClick: handleUpgradeToOwner
+            }
+          ]
         ),
       ],
     },
@@ -247,6 +267,7 @@ export default function SettingsPage() {
               {section.items.map((item, itemIndex) => (
                 <button
                   key={itemIndex}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   onClick={(item as any).onClick}
                   className={`w-full px-4 py-3.5 flex items-center justify-between transition-colors hover:bg-zinc-50 ${itemIndex !== section.items.length - 1 ? 'border-b border-zinc-50' : ''}`}
                 >

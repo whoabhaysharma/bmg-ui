@@ -88,6 +88,7 @@ export const usersAPI = {
   restore: (id: string) => apiClient.post(`/users/${id}/restore`),
   addRole: (id: string, role: string) => apiClient.post(`/users/${id}/role`, { role, action: 'add' }),
   removeRole: (id: string, role: string) => apiClient.post(`/users/${id}/role`, { role, action: 'remove' }),
+  upgradeToOwner: () => apiClient.post('/users/me/upgrade-to-owner'),
 };
 
 export const subscriptionsAPI = {
