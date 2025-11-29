@@ -82,7 +82,11 @@ const formatDuration = (value: number, unit: PlanType) => {
 // ---------------------------------------
 // Component: Plan Item Card
 // ---------------------------------------
-function PlanItem({ plan, onToggleStatus }: { plan: GymSubscriptionPlan, onToggleStatus: (p: GymSubscriptionPlan) => void }) {
+function PlanItem({ plan, onToggleStatus, onDelete }: {
+    plan: GymSubscriptionPlan,
+    onToggleStatus: (p: GymSubscriptionPlan) => void,
+    onDelete: (id: string) => void
+}) {
     return (
         <div className={`
             group relative flex flex-col p-4 bg-white border rounded-2xl shadow-sm transition-all duration-200
@@ -132,6 +136,12 @@ function PlanItem({ plan, onToggleStatus }: { plan: GymSubscriptionPlan, onToggl
                                 onClick={() => onToggleStatus(plan)}
                             >
                                 {plan.isActive ? 'Deactivate' : 'Activate'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="text-rose-600 focus:text-rose-600 cursor-pointer"
+                                onClick={() => onDelete(plan.id)}
+                            >
+                                Delete Plan
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -243,6 +253,21 @@ export default function MembershipPlansPage() {
         }
     }
 
+    const handleDeletePlan = async (planId: string) => {
+        if (!currentGym) return;
+        if (!confirm('Are you sure you want to delete this plan?')) return;
+
+        try {
+            await plansAPI.delete(planId);
+            // Refresh list
+            const plansRes = await plansAPI.getByGymId(currentGym.id);
+            setPlans(plansRes.data.data || plansRes.data);
+        } catch (error) {
+            console.error("Failed to delete plan:", error);
+            alert("Failed to delete plan");
+        }
+    }
+
     const filteredPlans = plans.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
     // Helper for Quick Duration Chips
@@ -291,7 +316,12 @@ export default function MembershipPlansPage() {
 
                 <div className="grid gap-3">
                     {filteredPlans.map((plan) => (
-                        <PlanItem key={plan.id} plan={plan} onToggleStatus={handleToggleStatus} />
+                        <PlanItem
+                            key={plan.id}
+                            plan={plan}
+                            onToggleStatus={handleToggleStatus}
+                            onDelete={handleDeletePlan}
+                        />
                     ))}
                 </div>
 

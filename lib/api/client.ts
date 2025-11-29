@@ -101,7 +101,16 @@ export const subscriptionsAPI = {
 export const paymentsAPI = {
   verify: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
     apiClient.post('/payments/verify', data),
-  getByGymId: (gymId: string) => apiClient.get(`/payments?gymId=${gymId}`), // Speculative
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getAll: (params?: Record<string, any>) => apiClient.get('/payments', { params }),
+};
+
+export const settlementsAPI = {
+  create: (data: { gymId: string }) => apiClient.post('/settlements', data),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getAll: (params?: Record<string, any>) => apiClient.get('/settlements', { params }),
+  getUnsettledAmount: (gymId: string) => apiClient.get(`/settlements/unsettled?gymId=${gymId}`),
+  getById: (id: string) => apiClient.get(`/settlements/${id}`),
 };
 
 export const attendanceAPI = {

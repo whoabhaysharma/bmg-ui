@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Home, Dumbbell, Activity, User, Bell, Settings } from 'lucide-react';
+import { Home, User, Settings, IndianRupee } from 'lucide-react';
 
 // 🛑 FIX: Use real Next.js navigation hooks instead of mock functions
 import { usePathname, useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export function OwnerFooter() {
   const navItems = [
     { icon: Home, label: 'Home', path: '/owner/dashboard' },
     { icon: User, label: 'Members', path: '/owner/members' }, // Changed label for clarity
-    { icon: Activity, label: 'Activity', path: '/owner/payments' },
+    { icon: IndianRupee, label: 'Payments', path: '/owner/payments' },
     { icon: Settings, label: 'Profile', path: '/owner/settings' },
   ];
 
@@ -72,7 +72,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     fetchGyms();
-  }, []);
+  }, [fetchGyms]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-zinc-900 font-sans selection:bg-zinc-200">

@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, Bell, User, Calendar, CreditCard, ChevronRight } from "lucide-react"
+import { Activity, Bell, User, Calendar, CreditCard } from "lucide-react"
 // SHADCN Drawer import
 import {
     Drawer,
@@ -14,13 +14,14 @@ import {
 } from "@/components/ui/drawer";
 import { useEffect, useState } from "react";
 import { useOwnerStore } from "@/lib/store/ownerStore";
-import { gymsAPI, attendanceAPI } from "@/lib/api/client";
+import { gymsAPI, attendanceAPI, settlementsAPI } from "@/lib/api/client";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/lib/store/notificationStore";
-import { formatDistanceToNow, isPast, parseISO } from "date-fns";
+import { formatDistanceToNow, isPast } from "date-fns";
+import { useRouter } from "next/navigation";
 
 // ---------------------------------------
 // Types
@@ -48,7 +49,7 @@ export function OwnerHeader() {
 
     useEffect(() => {
         fetchNotifications();
-    }, []);
+    }, [fetchNotifications]);
 
     return (
         <header className={'bg-transparent pt-6 py-4'}>
@@ -166,7 +167,7 @@ function StatsCard({ label, value, change, positive }: StatsCardProps) {
 // ---------------------------------------
 // Quick Actions Section
 // ---------------------------------------
-function QuickActions({ onCheckInClick }: { onCheckInClick: () => void }) {
+function QuickActions({ onCheckInClick, onPaymentsClick }: { onCheckInClick: () => void; onPaymentsClick: () => void }) {
     return (
         <div className="bg-zinc-900 text-white p-6 rounded-[2rem] shadow-xl shadow-zinc-200">
             <div className="flex justify-between items-start mb-4">
@@ -180,8 +181,11 @@ function QuickActions({ onCheckInClick }: { onCheckInClick: () => void }) {
             </div>
 
             <div className="flex gap-3 mt-4">
-                <button className="flex-1 bg-zinc-800 py-3 rounded-xl text-sm font-medium hover:bg-zinc-700 transition">
-                    Add Member
+                <button
+                    onClick={onPaymentsClick}
+                    className="flex-1 bg-zinc-800 py-3 rounded-xl text-sm font-medium hover:bg-zinc-700 transition"
+                >
+                    Payments
                 </button>
                 <button
                     onClick={onCheckInClick}
@@ -245,10 +249,12 @@ function RecentActivityList({ items }: { items: RecentItemProps[] }) {
 // Main Dashboard Component
 // ---------------------------------------
 export default function DashboardContent() {
+    const router = useRouter();
     const { currentGym, isLoading: isGymLoading } = useOwnerStore();
     const [stats, setStats] = useState({
         totalRevenue: 0,
         activeMembers: 0,
+        unsettledAmount: 0,
         recentActivity: [] as RecentItemProps[]
     });
     const [loading, setLoading] = useState(true);
@@ -286,6 +292,7 @@ export default function DashboardContent() {
                 expiryDate: data.subscription?.endDate
             });
             setAccessCode('');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Check-in verification failed:", error);
             const errorMsg = error.response?.data?.error || 'Verification failed. Please try again.';
@@ -315,25 +322,38 @@ export default function DashboardContent() {
                 return;
             }
             try {
-                const res = await gymsAPI.getStats(currentGym.id);
-                const data = res.data.data || res.data;
+                const [statsRes, unsettledRes] = await Promise.all([
+                    gymsAPI.getStats(currentGym.id),
+                    settlementsAPI.getUnsettledAmount(currentGym.id)
+                ]);
+
+                const data = statsRes.data.data || statsRes.data;
+                const unsettledData = unsettledRes.data.data || unsettledRes.data; // Assuming { amount: 1000 }
+
                 setStats({
                     totalRevenue: data.totalRevenue,
                     activeMembers: data.activeMembers,
-                    recentActivity: data.recentActivity.map((act: any) => ({
+                    unsettledAmount: unsettledData.amount || 0,
+                    recentActivity: data.recentActivity.map((act: { title: string; time: string; amount?: number }) => ({
                         title: act.title,
                         time: new Date(act.time).toLocaleDateString(),
                         amount: act.amount ? `+ ₹${act.amount}` : undefined
                     }))
                 });
-            } catch (error) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (error: any) {
                 console.error("Failed to fetch dashboard stats:", error);
             } finally {
                 setLoading(false);
             }
         };
         fetchStats();
-    }, [currentGym, isGymLoading]);
+    }, [currentGym, isGymLoading]); // Removed fetchStats from deps as it's defined inside useEffect
+
+    // Check-in verification error handling
+    // ... (no changes needed here as error: any is standard for catch blocks, but I'll suppress it if needed or leave it as it's common)
+    // Actually, let's fix the recentActivity map type
+
 
     // Helper to calculate expiry visual state
     const getExpiryInfo = (dateString?: string) => {
@@ -371,9 +391,18 @@ export default function DashboardContent() {
                     label="Active Members"
                     value={stats.activeMembers.toString()}
                 />
+                <StatsCard
+                    label="Unsettled Amount"
+                    value={`₹${stats.unsettledAmount.toLocaleString()}`}
+                    change={stats.unsettledAmount > 0 ? "Pending" : undefined}
+                    positive={false} // Neutral or warning color
+                />
             </div>
 
-            <QuickActions onCheckInClick={() => setIsCheckInDrawerOpen(true)} />
+            <QuickActions
+                onCheckInClick={() => setIsCheckInDrawerOpen(true)}
+                onPaymentsClick={() => router.push('/owner/payments')}
+            />
 
             <RecentActivityList items={stats.recentActivity} />
 
