@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from "react"
 import {
     Settings,
     ChevronRight,
@@ -11,14 +12,31 @@ import {
     Dumbbell,
     Users,
     HelpCircle,
-    ToggleRight // Using an icon instead of a component for stability
+    ToggleRight,
+    Edit2,
+    Camera,
+    Loader2
 } from "lucide-react"
 
 // SHADCN / UI Imports
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerClose
+} from '@/components/ui/drawer'
 import { useRouter } from "next/navigation"
+import { usersAPI, plansAPI, gymsAPI } from "@/lib/api/client"
+import { useAuthStore } from "@/lib/store/authStore"
+import { useOwnerStore } from "@/lib/store/ownerStore"
 
 // ---------------------------------------
 // Types
@@ -30,6 +48,20 @@ interface SettingItemProps {
     action?: React.ReactNode
     onClick?: () => void
     isDestructive?: boolean
+}
+
+interface Gym {
+    id: string;
+    name: string;
+    address?: string;
+}
+
+interface UserProfile {
+    id: string;
+    name: string;
+    mobileNumber: string;
+    role: string;
+    gymsOwned?: Gym[];
 }
 
 // ---------------------------------------
@@ -89,7 +121,106 @@ function SettingsSection({ title, children }: { title: string, children: React.R
 // ---------------------------------------
 export default function SettingsPage() {
     const router = useRouter();
-    const user = { name: 'Arjun Verma', avatar: 'AV', role: 'Gym Owner' };
+    const logout = useAuthStore((state) => state.logout);
+
+    const [user, setUser] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const { currentGym } = useOwnerStore();
+    const [activePlansCount, setActivePlansCount] = useState<number | null>(null);
+
+    // Gym Creation State
+    const [isCreatingGym, setIsCreatingGym] = useState(false);
+    const [newGymName, setNewGymName] = useState('');
+    const [newGymAddress, setNewGymAddress] = useState('');
+    const [isCreatingGymLoading, setIsCreatingGymLoading] = useState(false);
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, []);
+
+    useEffect(() => {
+        const fetchPlansCount = async () => {
+            if (!currentGym) return;
+            try {
+                const res = await plansAPI.getActiveByGymId(currentGym.id);
+                const plans = res.data.data || res.data;
+                setActivePlansCount(plans.length);
+            } catch (error) {
+                console.error("Failed to fetch active plans:", error);
+            }
+        };
+
+        fetchPlansCount();
+    }, [currentGym]);
+
+    const fetchUserProfile = async () => {
+        try {
+            const res = await usersAPI.getMe();
+            const userData = res.data.data || res.data;
+            setUser(userData);
+            setEditName(userData.name);
+        } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateProfile = async () => {
+        if (!editName.trim()) return;
+
+        setIsSaving(true);
+        try {
+            await usersAPI.updateMe({ name: editName });
+            setUser((prev) => prev ? { ...prev, name: editName } : null);
+            setIsEditing(false);
+            alert('Profile updated successfully');
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            alert('Failed to update profile');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCreateGym = async () => {
+        if (!newGymName.trim()) return;
+
+        setIsCreatingGymLoading(true);
+        try {
+            await gymsAPI.create({
+                name: newGymName,
+                address: newGymAddress,
+            });
+            await fetchUserProfile(); // Refresh to get the new gym
+            setIsCreatingGym(false);
+            setNewGymName('');
+            setNewGymAddress('');
+            alert('Gym created successfully!');
+        } catch (error) {
+            console.error('Failed to create gym:', error);
+            alert('Failed to create gym. Please try again.');
+        } finally {
+            setIsCreatingGymLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        logout();
+        router.push('/auth/login');
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+                <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pb-32">
@@ -111,26 +242,33 @@ export default function SettingsPage() {
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
                         <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
-                            <AvatarFallback className="bg-zinc-800 text-white font-bold">{user.avatar}</AvatarFallback>
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`} />
+                            <AvatarFallback className="bg-zinc-800 text-white font-bold">
+                                {user?.name?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
                         </Avatar>
                         <div className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white"></div>
                     </div>
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-bold text-zinc-900 truncate">{user.name}</h2>
+                        <h2 className="text-lg font-bold text-zinc-900 truncate">{user?.name}</h2>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Badge variant="secondary" className="bg-white text-zinc-500 border-zinc-200 text-[10px] h-5 px-2 font-bold shadow-none">
-                                {user.role}
+                                {user?.role}
                             </Badge>
-                            <span className="text-xs text-zinc-400 font-medium truncate">Edit Profile</span>
+                            <span className="text-xs text-zinc-400 font-medium truncate">{user?.mobileNumber}</span>
                         </div>
                     </div>
 
-                    {/* Arrow */}
-                    <Button variant="ghost" size="icon" className="text-zinc-300 hover:text-zinc-600 flex-shrink-0 -mr-2">
-                        <ChevronRight className="w-5 h-5" />
+                    {/* Edit Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-zinc-300 hover:text-zinc-600 flex-shrink-0 -mr-2"
+                        onClick={() => setIsEditing(true)}
+                    >
+                        <Edit2 className="w-5 h-5" />
                     </Button>
                 </div>
             </div>
@@ -148,7 +286,11 @@ export default function SettingsPage() {
                         onClick={
                             () => router.push('/owner/settings/plans')
                         }
-                        action={<Badge className="bg-zinc-900 text-white hover:bg-zinc-800 text-[10px] h-5">5 Active</Badge>}
+                        action={
+                            <Badge className="bg-zinc-900 text-white hover:bg-zinc-800 text-[10px] h-5">
+                                {activePlansCount !== null ? `${activePlansCount} Active` : 'Loading...'}
+                            </Badge>
+                        }
                     />
                     <SettingItem
                         icon={Users}
@@ -157,9 +299,15 @@ export default function SettingsPage() {
                     />
                     <SettingItem
                         icon={Store}
-                        label="Gym Profile"
-                        sub="Logo, Address, Hours"
-                        onClick={() => router.push('/owner/settings/gym-profile')}
+                        label="Gyms"
+                        sub="Manage your gyms"
+                        onClick={() => {
+                            if (user?.gymsOwned && user.gymsOwned.length > 0) {
+                                alert(`You manage: ${user.gymsOwned[0].name}`);
+                            } else {
+                                setIsCreatingGym(true);
+                            }
+                        }}
                     />
                 </SettingsSection>
 
@@ -194,7 +342,11 @@ export default function SettingsPage() {
 
                 {/* Logout Button */}
                 <div className="pt-2">
-                    <Button variant="outline" className="w-full h-12 bg-white border-zinc-200 text-rose-600 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-100 rounded-2xl font-semibold gap-2 shadow-sm">
+                    <Button
+                        variant="outline"
+                        onClick={handleLogout}
+                        className="w-full h-12 bg-white border-zinc-200 text-rose-600 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-100 rounded-2xl font-semibold gap-2 shadow-sm"
+                    >
                         <LogOut className="w-4 h-4" />
                         Sign Out
                     </Button>
@@ -204,6 +356,128 @@ export default function SettingsPage() {
                 </div>
 
             </div>
+
+            {/* Edit Profile Drawer */}
+            <Drawer open={isEditing} onOpenChange={setIsEditing}>
+                <DrawerContent className="max-w-md mx-auto rounded-t-[32px]">
+                    <div className="p-6 bg-zinc-50/50 border-b border-zinc-100">
+                        <DrawerHeader className="p-0 text-left">
+                            <DrawerTitle className="text-xl font-bold text-zinc-900">Edit Profile</DrawerTitle>
+                            <DrawerDescription>Update your personal information.</DrawerDescription>
+                        </DrawerHeader>
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                        <div className="flex justify-center">
+                            <div className="relative">
+                                <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${editName}`} />
+                                    <AvatarFallback className="bg-zinc-800 text-white text-2xl font-bold">
+                                        {editName?.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="absolute bottom-0 right-0 p-2 bg-zinc-900 text-white rounded-full border-4 border-white shadow-sm cursor-pointer hover:bg-zinc-800">
+                                    <Camera className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-zinc-900 font-bold text-sm">Full Name</Label>
+                            <Input
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="h-12 rounded-2xl border-zinc-200 bg-white shadow-sm text-base font-medium"
+                                placeholder="Enter your name"
+                            />
+                        </div>
+
+                        <div className="space-y-3 opacity-60">
+                            <Label className="text-zinc-900 font-bold text-sm">Mobile Number</Label>
+                            <Input
+                                value={user?.mobileNumber || ''}
+                                disabled
+                                className="h-12 rounded-2xl border-zinc-200 bg-zinc-50 text-base font-medium"
+                            />
+                            <p className="text-[10px] text-zinc-400 font-medium px-1">Mobile number cannot be changed directly.</p>
+                        </div>
+                    </div>
+
+                    <DrawerFooter className="p-6 pt-2">
+                        <Button
+                            onClick={handleUpdateProfile}
+                            disabled={isSaving}
+                            className="w-full h-14 text-base font-bold bg-zinc-900 hover:bg-zinc-800 rounded-2xl shadow-xl shadow-zinc-200"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                'Save Changes'
+                            )}
+                        </Button>
+                        <DrawerClose asChild>
+                            <Button variant="ghost" className="w-full h-12 rounded-xl text-zinc-500 font-semibold hover:bg-zinc-50 hover:text-zinc-900">Cancel</Button>
+                        </DrawerClose>
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+
+            {/* Create Gym Drawer */}
+            <Drawer open={isCreatingGym} onOpenChange={setIsCreatingGym}>
+                <DrawerContent className="max-w-md mx-auto rounded-t-[32px]">
+                    <div className="p-6 bg-zinc-50/50 border-b border-zinc-100">
+                        <DrawerHeader className="p-0 text-left">
+                            <DrawerTitle className="text-xl font-bold text-zinc-900">Create Gym</DrawerTitle>
+                            <DrawerDescription>Add a new gym to your account.</DrawerDescription>
+                        </DrawerHeader>
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                        <div className="space-y-3">
+                            <Label className="text-zinc-900 font-bold text-sm">Gym Name</Label>
+                            <Input
+                                value={newGymName}
+                                onChange={(e) => setNewGymName(e.target.value)}
+                                className="h-12 rounded-2xl border-zinc-200 bg-white shadow-sm text-base font-medium"
+                                placeholder="e.g. Iron Paradise"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-zinc-900 font-bold text-sm">Address</Label>
+                            <Input
+                                value={newGymAddress}
+                                onChange={(e) => setNewGymAddress(e.target.value)}
+                                className="h-12 rounded-2xl border-zinc-200 bg-white shadow-sm text-base font-medium"
+                                placeholder="e.g. 123 Fitness St."
+                            />
+                        </div>
+                    </div>
+
+                    <DrawerFooter className="p-6 pt-2">
+                        <Button
+                            onClick={handleCreateGym}
+                            disabled={isCreatingGymLoading || !newGymName.trim()}
+                            className="w-full h-14 text-base font-bold bg-zinc-900 hover:bg-zinc-800 rounded-2xl shadow-xl shadow-zinc-200"
+                        >
+                            {isCreatingGymLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Creating...
+                                </>
+                            ) : (
+                                'Create Gym'
+                            )}
+                        </Button>
+                        <DrawerClose asChild>
+                            <Button variant="ghost" className="w-full h-12 rounded-xl text-zinc-500 font-semibold hover:bg-zinc-50 hover:text-zinc-900">Cancel</Button>
+                        </DrawerClose>
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
         </div>
     )
 }

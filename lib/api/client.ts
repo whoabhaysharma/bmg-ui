@@ -51,6 +51,7 @@ export const gymsAPI = {
   delete: (id: string) => apiClient.delete(`/gyms/${id}`),
   verify: (id: string) => apiClient.patch(`/gyms/${id}/verify`),
   unverify: (id: string) => apiClient.patch(`/gyms/${id}/unverify`),
+  getStats: (id: string) => apiClient.get(`/gyms/${id}/stats`),
 };
 
 export const plansAPI = {
@@ -105,7 +106,14 @@ export const attendanceAPI = {
   getMe: (gymId?: string) => apiClient.get(`/attendance/me${gymId ? `?gymId=${gymId}` : ''}`),
   checkIn: (gymId: string) => apiClient.post(`/attendance/gym/${gymId}/check-in`),
   checkOut: (attendanceId: string) => apiClient.post(`/attendance/${attendanceId}/check-out`),
+  verifyCheckIn: (gymId: string, accessCode: string) => apiClient.post(`/attendance/gym/${gymId}/verify-check-in`, { accessCode }),
   getByGymId: (gymId: string) => apiClient.get(`/attendance?gymId=${gymId}`), // Speculative
+};
+
+export const notificationsAPI = {
+  getAll: () => apiClient.get('/notifications'),
+  markAsRead: (id: string) => apiClient.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => apiClient.patch('/notifications/read-all'),
 };
 
 export default apiClient;
