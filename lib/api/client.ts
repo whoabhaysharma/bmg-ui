@@ -92,8 +92,10 @@ export const usersAPI = {
 
 export const subscriptionsAPI = {
   create: (data: { planId: string; gymId: string }) => apiClient.post('/subscriptions', data),
+  createConsole: (data: { userId?: string; name?: string; mobileNumber?: string; planId: string; gymId: string }) => apiClient.post('/subscriptions/console', data),
   getMySubscriptions: () => apiClient.get('/subscriptions/my-subscriptions'),
-  getByGymId: (gymId: string) => apiClient.get(`/subscriptions?gymId=${gymId}`), // Speculative
+  getByGymId: (gymId: string) => apiClient.get(`/subscriptions?gymId=${gymId}`),
+  activate: (id: string) => apiClient.patch(`/subscriptions/${id}/activate`),
 };
 
 export const paymentsAPI = {
