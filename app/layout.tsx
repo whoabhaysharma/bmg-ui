@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import BottomNav from "@/components/ui/bottom-nav";
 import { PWAInstallPrompt } from "@/components/pwa/install-prompt";
 import { OfflineIndicator } from "@/components/pwa/offline-indicator";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,6 +60,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <PWAInstallPrompt />
+          <Toaster />
         </Providers>
       </body>
     </html>

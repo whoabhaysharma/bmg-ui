@@ -17,6 +17,7 @@ import {
     Camera,
     Loader2
 } from "lucide-react"
+import { toast } from "sonner"
 
 // SHADCN / UI Imports
 import { Button } from "@/components/ui/button"
@@ -178,10 +179,10 @@ export default function SettingsPage() {
             await usersAPI.updateMe({ name: editName });
             setUser((prev) => prev ? { ...prev, name: editName } : null);
             setIsEditing(false);
-            alert('Profile updated successfully');
+            toast.success('Profile updated successfully');
         } catch (error) {
             console.error('Failed to update profile:', error);
-            alert('Failed to update profile');
+            toast.error('Failed to update profile');
         } finally {
             setIsSaving(false);
         }
@@ -200,10 +201,10 @@ export default function SettingsPage() {
             setIsCreatingGym(false);
             setNewGymName('');
             setNewGymAddress('');
-            alert('Gym created successfully!');
+            toast.success('Gym created successfully!');
         } catch (error) {
             console.error('Failed to create gym:', error);
-            alert('Failed to create gym. Please try again.');
+            toast.error('Failed to create gym. Please try again.');
         } finally {
             setIsCreatingGymLoading(false);
         }
@@ -303,7 +304,7 @@ export default function SettingsPage() {
                         sub="Manage your gyms"
                         onClick={() => {
                             if (user?.gymsOwned && user.gymsOwned.length > 0) {
-                                alert(`You manage: ${user.gymsOwned[0].name}`);
+                                toast.info(`You manage: ${user.gymsOwned[0].name}`);
                             } else {
                                 setIsCreatingGym(true);
                             }

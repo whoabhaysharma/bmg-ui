@@ -36,6 +36,17 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { plansAPI } from "@/lib/api/client"
+import { toast } from "sonner"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // ---------------------------------------
 // Types & Interfaces
@@ -170,6 +181,7 @@ export default function MembersPage() {
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
     const [newMember, setNewMember] = useState({ name: '', phone: '', planId: '' })
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [memberToActivate, setMemberToActivate] = useState<string | null>(null)
 
     useEffect(() => {
         if (currentGym) {
@@ -181,7 +193,7 @@ export default function MembersPage() {
 
     const handleAddMember = async () => {
         if (!newMember.name || !newMember.phone || !newMember.planId) {
-            alert("Please fill all fields")
+            toast.error("Please fill all fields")
             return
         }
 
@@ -197,10 +209,10 @@ export default function MembersPage() {
             setIsAddMemberOpen(false)
             setNewMember({ name: '', phone: '', planId: '' })
             fetchMembers()
-            alert("Member added successfully")
+            toast.success("Member added successfully")
         } catch (error) {
             console.error("Failed to add member", error)
-            alert("Failed to add member")
+            toast.error("Failed to add member")
         } finally {
             setIsSubmitting(false)
         }
@@ -244,16 +256,19 @@ export default function MembersPage() {
         fetchMembers()
     }, [currentGym, isGymLoading])
 
-    const handleActivate = async (id: string) => {
-        if (!confirm('Are you sure you want to manually activate this subscription?')) return;
+    const confirmActivate = async () => {
+        if (!memberToActivate) return;
 
         try {
-            await subscriptionsAPI.activate(id);
+            await subscriptionsAPI.activate(memberToActivate);
             // Refresh list
             fetchMembers();
+            toast.success("Subscription activated successfully");
         } catch (error) {
             console.error("Failed to activate subscription:", error);
-            alert("Failed to activate subscription");
+            toast.error("Failed to activate subscription");
+        } finally {
+            setMemberToActivate(null);
         }
     };
 
@@ -333,7 +348,7 @@ export default function MembersPage() {
 
             {/* --- CONTENT LIST --- */}
             <div className="px-4 py-6 space-y-3">
-                {filtered.map((member) => <MemberItem key={member.id} {...member} onActivate={handleActivate} />)}
+                {filtered.map((member) => <MemberItem key={member.id} {...member} onActivate={(id) => setMemberToActivate(id)} />)}
 
                 {filtered.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -415,6 +430,21 @@ export default function MembersPage() {
                     </div>
                 </DrawerContent>
             </Drawer>
+
+            <AlertDialog open={!!memberToActivate} onOpenChange={(open) => !open && setMemberToActivate(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Activate Subscription?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to manually activate this subscription?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmActivate} className="bg-zinc-900 hover:bg-zinc-800">Activate</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

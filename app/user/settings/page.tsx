@@ -19,6 +19,17 @@ import {
   Camera,
   Dumbbell
 } from 'lucide-react';
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Drawer,
   DrawerContent,
@@ -62,6 +73,7 @@ export default function SettingsPage() {
   const [newGymName, setNewGymName] = useState('');
   const [newGymAddress, setNewGymAddress] = useState('');
   const [isCreatingGymLoading, setIsCreatingGymLoading] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -88,10 +100,10 @@ export default function SettingsPage() {
       await usersAPI.updateMe({ name: editName });
       setUser((prev) => prev ? { ...prev, name: editName } : null);
       setIsEditing(false);
-      alert('Profile updated successfully');
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile');
+      toast.error('Failed to update profile');
     } finally {
       setIsSaving(false);
     }
@@ -110,10 +122,10 @@ export default function SettingsPage() {
       setIsCreatingGym(false);
       setNewGymName('');
       setNewGymAddress('');
-      alert('Gym created successfully!');
+      toast.success('Gym created successfully!');
     } catch (error) {
       console.error('Failed to create gym:', error);
-      alert('Failed to create gym. Please try again.');
+      toast.error('Failed to create gym. Please try again.');
     } finally {
       setIsCreatingGymLoading(false);
     }
@@ -124,17 +136,17 @@ export default function SettingsPage() {
     router.push('/auth/login');
   };
 
-  const handleUpgradeToOwner = async () => {
-    if (!confirm('Are you sure you want to become a Gym Owner? This will enable owner features for your account.')) return;
-
+  const confirmUpgradeToOwner = async () => {
     try {
       await usersAPI.upgradeToOwner();
-      alert('Congratulations! You are now a Gym Owner. Please sign in again to access the Owner Dashboard.');
+      toast.success('Congratulations! You are now a Gym Owner. Please sign in again.');
       logout();
       router.push('/auth/login');
     } catch (error) {
       console.error('Failed to upgrade to owner:', error);
-      alert('Failed to upgrade to owner. Please try again.');
+      toast.error('Failed to upgrade to owner. Please try again.');
+    } finally {
+      setShowUpgradeDialog(false);
     }
   };
 
@@ -156,7 +168,7 @@ export default function SettingsPage() {
                 // For now, just show an alert or navigate if we had a page
                 // The requirement says "allow only one gym creation for now"
                 // So if they have one, maybe we just say "You have a gym: [Name]"
-                alert(`You manage: ${user.gymsOwned[0].name}`);
+                toast.info(`You manage: ${user.gymsOwned[0].name}`);
               } else {
                 setIsCreatingGym(true);
               }
@@ -168,7 +180,7 @@ export default function SettingsPage() {
               title: 'Become a Gym Owner',
               description: 'Start managing your own gym',
               icon: Dumbbell,
-              onClick: handleUpgradeToOwner
+              onClick: () => setShowUpgradeDialog(true)
             }
           ]
         ),
@@ -424,6 +436,21 @@ export default function SettingsPage() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      <AlertDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Become a Gym Owner?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will enable owner features for your account. You will need to sign in again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUpgradeToOwner} className="bg-zinc-900 hover:bg-zinc-800">Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -47,7 +47,17 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-
+import { toast } from "sonner"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 // ---------------------------------------
 // Types (Based on your Prisma Schema)
 // ---------------------------------------
@@ -181,6 +191,7 @@ export default function MembershipPlansPage() {
     const [newPlanPrice, setNewPlanPrice] = useState("")
     const [newPlanDesc, setNewPlanDesc] = useState("")
     const [duration, setDuration] = useState({ value: 1, unit: PlanType.MONTH })
+    const [planToDelete, setPlanToDelete] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchPlans = async () => {
@@ -229,10 +240,10 @@ export default function MembershipPlansPage() {
             const plansRes = await plansAPI.getByGymId(currentGym.id)
             setPlans(plansRes.data.data || plansRes.data)
 
-            alert("Plan created successfully")
+            toast.success("Plan created successfully")
         } catch (error) {
             console.error("Failed to create plan:", error)
-            alert("Failed to create plan")
+            toast.error("Failed to create plan")
         }
     }
 
@@ -249,22 +260,24 @@ export default function MembershipPlansPage() {
             setPlans(plansRes.data.data || plansRes.data)
         } catch (error) {
             console.error("Failed to update plan status:", error)
-            alert("Failed to update plan status")
+            toast.error("Failed to update plan status")
         }
     }
 
-    const handleDeletePlan = async (planId: string) => {
-        if (!currentGym) return;
-        if (!confirm('Are you sure you want to delete this plan?')) return;
+    const confirmDeletePlan = async () => {
+        if (!currentGym || !planToDelete) return;
 
         try {
-            await plansAPI.delete(planId);
+            await plansAPI.delete(planToDelete);
             // Refresh list
             const plansRes = await plansAPI.getByGymId(currentGym.id);
             setPlans(plansRes.data.data || plansRes.data);
+            toast.success("Plan deleted successfully");
         } catch (error) {
             console.error("Failed to delete plan:", error);
-            alert("Failed to delete plan");
+            toast.error("Failed to delete plan");
+        } finally {
+            setPlanToDelete(null);
         }
     }
 
@@ -320,7 +333,7 @@ export default function MembershipPlansPage() {
                             key={plan.id}
                             plan={plan}
                             onToggleStatus={handleToggleStatus}
-                            onDelete={handleDeletePlan}
+                            onDelete={(id) => setPlanToDelete(id)}
                         />
                     ))}
                 </div>
@@ -475,6 +488,21 @@ export default function MembershipPlansPage() {
                     </DrawerFooter>
                 </DrawerContent>
             </Drawer>
+
+            <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the plan.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeletePlan} className="bg-rose-600 hover:bg-rose-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

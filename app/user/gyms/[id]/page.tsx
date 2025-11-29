@@ -6,7 +6,7 @@ import { gymsAPI, plansAPI, subscriptionsAPI } from '@/lib/api/client';
 import { Loader2, MapPin, Check, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast'; // Assuming we have this or I'll use alert
+import { toast } from "sonner"
 
 interface Gym {
     id: string;
@@ -64,14 +64,14 @@ export default function GymDetailsPage() {
 
             // 2. Ideally, open Razorpay here using 'order.id'
             // For now, we'll simulate a success or show an alert
-            alert(`Order Created! Order ID: ${order.id}\n\n(In a real app, Razorpay checkout would open here.)`);
+            toast.success(`Order Created! Order ID: ${order.id}`);
 
             // Redirect to dashboard
             router.push('/user/dashboard');
 
         } catch (error: any) {
             console.error("Failed to purchase plan:", error);
-            alert(error.response?.data?.error || 'Failed to initiate purchase');
+            toast.error(error.response?.data?.error || 'Failed to initiate purchase');
         } finally {
             setPurchasing(null);
         }

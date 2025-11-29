@@ -14,6 +14,7 @@ import {
     User,
     Loader2
 } from "lucide-react"
+import { toast } from "sonner"
 import { gymsAPI } from "@/lib/api/client"
 import { useOwnerStore } from "@/lib/store/ownerStore"
 
@@ -82,10 +83,10 @@ export default function GymProfilePage() {
                 address: updatedGym.address
             })
 
-            alert("Gym profile updated successfully")
+            toast.success("Gym profile updated successfully")
         } catch (error) {
             console.error("Failed to update profile:", error)
-            alert("Failed to update profile")
+            toast.error("Failed to update profile")
         }
     }
 
