@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Home, Dumbbell, Activity, User, Bell, Settings } from 'lucide-react';
 
 // 🛑 FIX: Use real Next.js navigation hooks instead of mock functions
-import { usePathname, useRouter } from 'next/navigation'; 
+import { usePathname, useRouter } from 'next/navigation';
 // Note: Ensure you are running this within a Next.js App Router environment 
 // where 'next/navigation' is available.
 
@@ -25,8 +25,8 @@ export function OwnerFooter() {
   const navItems = [
     { icon: Home, label: 'Home', path: '/owner/dashboard' },
     { icon: User, label: 'Members', path: '/owner/members' }, // Changed label for clarity
-    { icon: Activity, label: 'Activity', path: '/owner/activity' },
-    { icon: Settings, label: 'Profile', path: '/owner/profile' },
+    { icon: Activity, label: 'Activity', path: '/owner/payments' },
+    { icon: Settings, label: 'Profile', path: '/owner/settings' },
   ];
 
   return (
@@ -34,13 +34,13 @@ export function OwnerFooter() {
       <nav className="pointer-events-auto bg-white/90 backdrop-blur-2xl border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl px-2 py-2 flex items-center justify-between gap-1 w-[90%] max-w-[360px]">
         {navItems.map((item) => {
           // Use the synchronized activeTab for comparison
-          const isActive = activeTab === item.path; 
+          const isActive = activeTab === item.path;
           return (
             <button
               key={item.label}
               onClick={() => {
                 // 3. Update state *before* navigation for immediate visual feedback
-                setActiveTab(item.path); 
+                setActiveTab(item.path);
                 // 4. Use the real router.push() to perform navigation
                 router.push(item.path);
               }}
@@ -65,7 +65,15 @@ export function OwnerFooter() {
 
 
 // --- 4. Main Layout Wrapper (Unchanged) ---
+import { useOwnerStore } from '@/lib/store/ownerStore';
+
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
+  const { fetchGyms } = useOwnerStore();
+
+  useEffect(() => {
+    fetchGyms();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-zinc-900 font-sans selection:bg-zinc-200">
       <main className="flex-1 w-full max-w-md mx-auto relative z-10">

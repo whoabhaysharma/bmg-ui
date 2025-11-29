@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from "react"
-import { Search, UserPlus, Phone, MoreHorizontal, CalendarClock, Users, Filter } from "lucide-react"
+import { useState, useEffect } from "react"
+import { subscriptionsAPI } from "@/lib/api/client"
+import { useOwnerStore } from "@/lib/store/ownerStore"
+import { Search, UserPlus, Phone, MoreHorizontal, CalendarClock, Users, Filter, CreditCard, Calendar, Loader2 } from "lucide-react"
 
 // SHADCN / UI Imports
 import { Input } from "@/components/ui/input"
@@ -26,14 +28,19 @@ interface Member {
     accessCode: string
     status: "active" | "inactive" | "expiring"
     lastVisit?: string
+    // Subscription details
+    planName?: string
+    startDate?: string
+    endDate?: string
+    price?: number
 }
 
 // ---------------------------------------
 // Component: Member Item 
 // ---------------------------------------
-function MemberItem({ name, phone, accessCode, status, lastVisit }: Member) {
+function MemberItem({ name, phone, accessCode, status, lastVisit, planName, endDate }: Member) {
     const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    
+
     const statusColor = {
         active: "bg-emerald-500 ring-emerald-100",
         inactive: "bg-zinc-300 ring-zinc-100",
@@ -59,10 +66,22 @@ function MemberItem({ name, phone, accessCode, status, lastVisit }: Member) {
                         <Phone className="h-3 w-3 text-zinc-400" />
                         <span className="truncate">{phone}</span>
                     </div>
+                    {planName && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                            <CreditCard className="h-3 w-3 text-zinc-300" />
+                            <span className="truncate">{planName}</span>
+                        </div>
+                    )}
                     <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
                         <CalendarClock className="h-3 w-3 text-zinc-300" />
                         <span>Last: <span className="text-zinc-500 font-medium">{lastVisit || 'N/A'}</span></span>
                     </div>
+                    {endDate && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                            <Calendar className="h-3 w-3 text-zinc-300" />
+                            <span>Expires: <span className="text-zinc-500 font-medium">{endDate}</span></span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -92,6 +111,19 @@ function MemberItem({ name, phone, accessCode, status, lastVisit }: Member) {
     )
 }
 
+function formatTimeAgo(dateString?: string) {
+    if (!dateString) return 'N/A'
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    return date.toLocaleDateString()
+}
+
 // ---------------------------------------
 // Main Members Page
 // ---------------------------------------
@@ -99,41 +131,73 @@ export default function MembersPage() {
     const [filter, setFilter] = useState<"all" | "active" | "inactive" | "expiring">("all")
     const [search, setSearch] = useState("")
 
-    // Data 
-    const allMembers: Member[] = [
-        { id: 1, name: "Rohan Sharma", phone: "9876543210", accessCode: "4829", status: "active", lastVisit: "2h ago" },
-        { id: 2, name: "Simran Kaur", phone: "9123456780", accessCode: "5522", status: "active", lastVisit: "Yesterday" },
-        { id: 3, name: "Karan Mehta", phone: "9090909090", accessCode: "7645", status: "expiring", lastVisit: "3d ago" },
-        { id: 4, name: "Aman Gupta", phone: "9988776655", accessCode: "1293", status: "inactive", lastVisit: "1mo ago" },
-        { id: 5, name: "Priya Singh", phone: "9310556789", accessCode: "3456", status: "active", lastVisit: "5h ago" },
-        { id: 6, name: "Vikram Bose", phone: "9876510923", accessCode: "1122", status: "active", lastVisit: "1h ago" },
-    ]
+    const [members, setMembers] = useState<Member[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const filtered = allMembers.filter((m) => {
+    const { currentGym, isLoading: isGymLoading } = useOwnerStore()
+
+    useEffect(() => {
+        const fetchMembers = async () => {
+            if (!currentGym) {
+                if (!isGymLoading) setLoading(false)
+                return
+            }
+
+            try {
+                // Get subscriptions for this gym
+                const subsRes = await subscriptionsAPI.getByGymId(currentGym.id)
+                const subscriptions = subsRes.data.data || subsRes.data
+
+                // 4. Map to Member interface
+                const mappedMembers: Member[] = subscriptions.map((sub: any) => ({
+                    id: sub.id,
+                    name: sub.user.name,
+                    phone: sub.user.mobileNumber || 'N/A',
+                    accessCode: sub.accessCode,
+                    status: sub.status.toLowerCase(),
+                    lastVisit: formatTimeAgo(sub.lastCheckIn),
+                    planName: sub.plan.name,
+                    startDate: new Date(sub.startDate).toLocaleDateString(),
+                    endDate: new Date(sub.endDate).toLocaleDateString(),
+                    price: sub.plan.price
+                }))
+
+                setMembers(mappedMembers)
+            } catch (error) {
+                console.error("Failed to fetch members:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchMembers()
+    }, [currentGym, isGymLoading])
+
+    const filtered = members.filter((m) => {
         const matchesFilter = filter === "all" || m.status === filter
         const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.phone.includes(search) || m.accessCode.includes(search)
         return matchesFilter && matchesSearch
     })
 
     const counts = {
-        all: allMembers.length,
-        active: allMembers.filter(m => m.status === 'active').length,
-        inactive: allMembers.filter(m => m.status === 'inactive').length,
-        expiring: allMembers.filter(m => m.status === 'expiring').length,
+        all: members.length,
+        active: members.filter(m => m.status === 'active').length,
+        inactive: members.filter(m => m.status === 'inactive').length,
+        expiring: members.filter(m => m.status === 'expiring').length,
     };
 
     const FilterButton = ({ id, label, count }: { id: typeof filter, label: string, count: number }) => (
         <Button
-            variant="ghost" 
+            variant="ghost"
             onClick={() => setFilter(id)}
             className={`
                 h-8 text-xs font-medium rounded-lg transition-all border
-                ${filter === id 
-                    ? 'bg-zinc-900 text-white border-zinc-900 shadow-md shadow-zinc-200' 
+                ${filter === id
+                    ? 'bg-zinc-900 text-white border-zinc-900 shadow-md shadow-zinc-200'
                     : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50'}
             `}
         >
-            {label} 
+            {label}
             <span className={`ml-1.5 ${filter === id ? 'opacity-100 text-zinc-400' : 'opacity-50'}`}>
                 {count}
             </span>
@@ -142,13 +206,13 @@ export default function MembersPage() {
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pb-28">
-            
+
             {/* --- UNIFIED HEADER CARD ---
                This merges the Title, Search, and Filters into one 
                clean block at the top, removing the "disconnected" feel.
             */}
             <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.02)] border-b border-zinc-100 px-5 pt-8 pb-6 space-y-5">
-                
+
                 {/* Top Row: Title & Count */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -167,7 +231,7 @@ export default function MembersPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search name, phone, code..."
-                        className="w-full pl-10 h-12 bg-zinc-50 border-zinc-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all placeholder:text-zinc-400" 
+                        className="w-full pl-10 h-12 bg-zinc-50 border-zinc-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all placeholder:text-zinc-400"
                     />
                 </div>
 
@@ -184,7 +248,7 @@ export default function MembersPage() {
             {/* --- CONTENT LIST --- */}
             <div className="px-4 py-6 space-y-3">
                 {filtered.map((member) => <MemberItem key={member.id} {...member} />)}
-                
+
                 {filtered.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                         <div className="bg-white p-4 rounded-full mb-3 shadow-sm border border-zinc-100">
@@ -198,8 +262,8 @@ export default function MembersPage() {
 
             {/* Floating Action Button */}
             <div className="fixed bottom-24 right-4 z-40">
-                <Button 
-                    size="icon" 
+                <Button
+                    size="icon"
                     className="h-14 w-14 rounded-2xl shadow-xl shadow-zinc-900/20 bg-zinc-900 hover:bg-zinc-800 active:scale-95 transition-all border border-zinc-700"
                 >
                     <UserPlus className="h-6 w-6 text-white" strokeWidth={2} />

@@ -13,6 +13,7 @@ import {
     DrawerClose,
 } from "@/components/ui/drawer";
 import { useEffect, useState } from "react";
+import { useOwnerStore } from "@/lib/store/ownerStore";
 
 
 // ---------------------------------------
@@ -33,8 +34,9 @@ interface RecentItemProps {
 
 
 export function OwnerHeader() {
-    const user = { name: 'Arjun Verma', avatar: 'AV' };
-    
+    const { currentGym } = useOwnerStore();
+    const user = { name: currentGym?.ownerName || 'Gym Owner', avatar: 'GO' };
+
     // Removed the 'scrolled' state and 'useEffect' hook for scroll handling.
     // const [scrolled, setScrolled] = useState(false);
     // useEffect(() => {
@@ -55,7 +57,7 @@ export function OwnerHeader() {
             // Removed 'sticky top-0 z-40', 'transition-all duration-300 ease-in-out', 
             // and the dynamic class template literal for 'scrolled'.
             // Set a fixed, non-scrolling background and padding.
-            className={'bg-transparent pt-6 py-4'} 
+            className={'bg-transparent pt-6 py-4'}
         >
             <div className="flex items-center justify-between max-w-md mx-auto w-full relative">
 
