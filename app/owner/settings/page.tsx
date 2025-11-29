@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
     Settings,
     ChevronRight,
@@ -35,9 +35,10 @@ import {
     DrawerClose
 } from '@/components/ui/drawer'
 import { useRouter } from "next/navigation"
-import { usersAPI, plansAPI, gymsAPI } from "@/lib/api/client"
 import { useAuthStore } from "@/lib/store/authStore"
 import { useOwnerStore } from "@/lib/store/ownerStore"
+import { useUserProfileQuery, useUpdateProfileMutation, useCreateGymMutation } from "@/lib/hooks/queries/useSettings"
+import { usePlansQuery } from "@/lib/hooks/queries/useMembers"
 
 // ---------------------------------------
 // Types
@@ -49,20 +50,6 @@ interface SettingItemProps {
     action?: React.ReactNode
     onClick?: () => void
     isDestructive?: boolean
-}
-
-interface Gym {
-    id: string;
-    name: string;
-    address?: string;
-}
-
-interface UserProfile {
-    id: string;
-    name: string;
-    mobileNumber: string;
-    role: string;
-    gymsOwned?: Gym[];
 }
 
 // ---------------------------------------
@@ -124,90 +111,69 @@ export default function SettingsPage() {
     const router = useRouter();
     const logout = useAuthStore((state) => state.logout);
 
-    const [user, setUser] = useState<UserProfile | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-
     const { currentGym } = useOwnerStore();
-    const [activePlansCount, setActivePlansCount] = useState<number | null>(null);
+
+    // React Query Hooks
+    const { data: user, isLoading: isUserLoading } = useUserProfileQuery();
+    const { data: plansData } = usePlansQuery(currentGym?.id);
+    const updateProfileMutation = useUpdateProfileMutation();
+    const createGymMutation = useCreateGymMutation();
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState(user?.name || '');
 
     // Gym Creation State
     const [isCreatingGym, setIsCreatingGym] = useState(false);
     const [newGymName, setNewGymName] = useState('');
     const [newGymAddress, setNewGymAddress] = useState('');
-    const [isCreatingGymLoading, setIsCreatingGymLoading] = useState(false);
 
-    useEffect(() => {
-        fetchUserProfile();
-    }, []);
+    // Update local state when user data loads
+    if (!editName && user?.name) {
+        setEditName(user.name);
+    }
 
-    useEffect(() => {
-        const fetchPlansCount = async () => {
-            if (!currentGym) return;
-            try {
-                const res = await plansAPI.getActiveByGymId(currentGym.id);
-                const plans = res.data.data || res.data;
-                setActivePlansCount(plans.length);
-            } catch (error) {
-                console.error("Failed to fetch active plans:", error);
-            }
-        };
-
-        fetchPlansCount();
-    }, [currentGym]);
-
-    const fetchUserProfile = async () => {
-        try {
-            const res = await usersAPI.getMe();
-            const userData = res.data.data || res.data;
-            setUser(userData);
-            setEditName(userData.name);
-        } catch (error) {
-            console.error('Failed to fetch user profile:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activePlansCount = (plansData as any[])?.length || null;
 
     const handleUpdateProfile = async () => {
         if (!editName.trim()) return;
 
-        setIsSaving(true);
-        try {
-            await usersAPI.updateMe({ name: editName });
-            setUser((prev) => prev ? { ...prev, name: editName } : null);
-            setIsEditing(false);
-            toast.success('Profile updated successfully');
-        } catch (error) {
-            console.error('Failed to update profile:', error);
-            toast.error('Failed to update profile');
-        } finally {
-            setIsSaving(false);
-        }
+        updateProfileMutation.mutate(
+            { name: editName },
+            {
+                onSuccess: () => {
+                    setIsEditing(false);
+                    toast.success('Profile updated successfully');
+                },
+                onError: (error) => {
+                    console.error('Failed to update profile:', error);
+                    toast.error('Failed to update profile');
+                }
+            }
+        );
     };
 
     const handleCreateGym = async () => {
         if (!newGymName.trim()) return;
 
-        setIsCreatingGymLoading(true);
-        try {
-            await gymsAPI.create({
+        createGymMutation.mutate(
+            {
                 name: newGymName,
                 address: newGymAddress,
-            });
-            await fetchUserProfile(); // Refresh to get the new gym
-            setIsCreatingGym(false);
-            setNewGymName('');
-            setNewGymAddress('');
-            toast.success('Gym created successfully!');
-        } catch (error) {
-            console.error('Failed to create gym:', error);
-            toast.error('Failed to create gym. Please try again.');
-        } finally {
-            setIsCreatingGymLoading(false);
-        }
+            },
+            {
+                onSuccess: () => {
+                    setIsCreatingGym(false);
+                    setNewGymName('');
+                    setNewGymAddress('');
+                    toast.success('Gym created successfully!');
+                },
+                onError: (error) => {
+                    console.error('Failed to create gym:', error);
+                    toast.error('Failed to create gym. Please try again.');
+                }
+            }
+        );
     };
 
     const handleLogout = () => {
@@ -215,7 +181,7 @@ export default function SettingsPage() {
         router.push('/auth/login');
     };
 
-    if (loading) {
+    if (isUserLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
@@ -267,7 +233,10 @@ export default function SettingsPage() {
                         variant="ghost"
                         size="icon"
                         className="text-zinc-300 hover:text-zinc-600 flex-shrink-0 -mr-2"
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => {
+                            setEditName(user?.name || '');
+                            setIsEditing(true);
+                        }}
                     >
                         <Edit2 className="w-5 h-5" />
                     </Button>
@@ -407,10 +376,10 @@ export default function SettingsPage() {
                     <DrawerFooter className="p-6 pt-2">
                         <Button
                             onClick={handleUpdateProfile}
-                            disabled={isSaving}
+                            disabled={updateProfileMutation.isPending}
                             className="w-full h-14 text-base font-bold bg-zinc-900 hover:bg-zinc-800 rounded-2xl shadow-xl shadow-zinc-200"
                         >
-                            {isSaving ? (
+                            {updateProfileMutation.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Saving...
@@ -461,10 +430,10 @@ export default function SettingsPage() {
                     <DrawerFooter className="p-6 pt-2">
                         <Button
                             onClick={handleCreateGym}
-                            disabled={isCreatingGymLoading || !newGymName.trim()}
+                            disabled={createGymMutation.isPending || !newGymName.trim()}
                             className="w-full h-14 text-base font-bold bg-zinc-900 hover:bg-zinc-800 rounded-2xl shadow-xl shadow-zinc-200"
                         >
-                            {isCreatingGymLoading ? (
+                            {createGymMutation.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Creating...

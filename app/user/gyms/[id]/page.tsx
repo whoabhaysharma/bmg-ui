@@ -69,6 +69,7 @@ export default function GymDetailsPage() {
             // Redirect to dashboard
             router.push('/user/dashboard');
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Failed to purchase plan:", error);
             toast.error(error.response?.data?.error || 'Failed to initiate purchase');

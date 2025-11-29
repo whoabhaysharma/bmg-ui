@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { subscriptionsAPI } from "@/lib/api/client"
+import { useState } from "react"
 import { useOwnerStore } from "@/lib/store/ownerStore"
-import { Search, UserPlus, Phone, MoreHorizontal, CalendarClock, Users, Filter, CreditCard, Calendar, Loader2 } from "lucide-react"
+import { Search, UserPlus, Phone, MoreHorizontal, CalendarClock, Users, CreditCard, Calendar, Loader2 } from "lucide-react"
 
 // SHADCN / UI Imports
 import { Input } from "@/components/ui/input"
@@ -35,7 +34,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { plansAPI } from "@/lib/api/client"
 import { toast } from "sonner"
 import {
     AlertDialog,
@@ -47,23 +45,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-// ---------------------------------------
-// Types & Interfaces
-// ---------------------------------------
-interface Member {
-    id: string
-    name: string
-    phone: string
-    accessCode: string
-    status: "active" | "inactive" | "expiring" | "pending"
-    lastVisit?: string
-    // Subscription details
-    planName?: string
-    startDate?: string
-    endDate?: string
-    price?: number
-}
+import { useMembersQuery, usePlansQuery, useAddMemberMutation, useActivateSubscriptionMutation, Member } from "@/lib/hooks/queries/useMembers"
 
 // ---------------------------------------
 // Component: Member Item 
@@ -152,44 +134,27 @@ function MemberItem({ id, name, phone, accessCode, status, lastVisit, planName, 
     )
 }
 
-function formatTimeAgo(dateString?: string) {
-    if (!dateString) return 'N/A'
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-    if (diffInSeconds < 60) return 'Just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
-    return date.toLocaleDateString()
-}
-
 // ---------------------------------------
 // Main Members Page
 // ---------------------------------------
 export default function MembersPage() {
     const [filter, setFilter] = useState<"all" | "active" | "inactive" | "expiring" | "pending">("all")
     const [search, setSearch] = useState("")
-
-    const [members, setMembers] = useState<Member[]>([])
-    const [loading, setLoading] = useState(true)
+    const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
+    const [newMember, setNewMember] = useState({ name: '', phone: '', planId: '' })
+    const [memberToActivate, setMemberToActivate] = useState<string | null>(null)
 
     const { currentGym, isLoading: isGymLoading } = useOwnerStore()
 
-    const [plans, setPlans] = useState<any[]>([])
-    const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
-    const [newMember, setNewMember] = useState({ name: '', phone: '', planId: '' })
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [memberToActivate, setMemberToActivate] = useState<string | null>(null)
+    // React Query Hooks
+    const { data: membersData, isLoading: isMembersLoading } = useMembersQuery(currentGym?.id);
+    const { data: plansData } = usePlansQuery(currentGym?.id);
+    const addMemberMutation = useAddMemberMutation(currentGym?.id || '');
+    const activateSubscriptionMutation = useActivateSubscriptionMutation(currentGym?.id || '');
 
-    useEffect(() => {
-        if (currentGym) {
-            plansAPI.getActiveByGymId(currentGym.id)
-                .then(res => setPlans(res.data.data || res.data))
-                .catch(err => console.error("Failed to fetch plans", err))
-        }
-    }, [currentGym])
+    const members = membersData || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const plans = (plansData as any[]) || [];
 
     const handleAddMember = async () => {
         if (!newMember.name || !newMember.phone || !newMember.planId) {
@@ -197,79 +162,39 @@ export default function MembersPage() {
             return
         }
 
-        setIsSubmitting(true)
-        try {
-            await subscriptionsAPI.createConsole({
+        addMemberMutation.mutate(
+            {
                 name: newMember.name,
                 mobileNumber: newMember.phone,
-                planId: newMember.planId,
-                gymId: currentGym!.id
-            })
-
-            setIsAddMemberOpen(false)
-            setNewMember({ name: '', phone: '', planId: '' })
-            fetchMembers()
-            toast.success("Member added successfully")
-        } catch (error) {
-            console.error("Failed to add member", error)
-            toast.error("Failed to add member")
-        } finally {
-            setIsSubmitting(false)
-        }
+                planId: newMember.planId
+            },
+            {
+                onSuccess: () => {
+                    setIsAddMemberOpen(false)
+                    setNewMember({ name: '', phone: '', planId: '' })
+                    toast.success("Member added successfully")
+                },
+                onError: (error) => {
+                    console.error("Failed to add member", error)
+                    toast.error("Failed to add member")
+                }
+            }
+        );
     }
-
-    const fetchMembers = async () => {
-        if (!currentGym) {
-            // If currentGym is not available and not loading, set loading to false
-            if (!isGymLoading) setLoading(false);
-            return;
-        }
-
-        try {
-            // Get subscriptions for this gym
-            const subsRes = await subscriptionsAPI.getByGymId(currentGym.id)
-            const subscriptions = subsRes.data.data || subsRes.data
-
-            // Map to Member interface
-            const mappedMembers: Member[] = subscriptions.map((sub: any) => ({
-                id: sub.id,
-                name: sub.user.name,
-                phone: sub.user.mobileNumber || 'N/A',
-                accessCode: sub.accessCode || 'PENDING',
-                status: sub.status.toLowerCase(),
-                lastVisit: formatTimeAgo(sub.lastCheckIn),
-                planName: sub.plan.name,
-                startDate: new Date(sub.startDate).toLocaleDateString(),
-                endDate: new Date(sub.endDate).toLocaleDateString(),
-                price: sub.plan.price
-            }))
-
-            setMembers(mappedMembers)
-        } catch (error) {
-            console.error("Failed to fetch members:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchMembers()
-    }, [currentGym, isGymLoading])
 
     const confirmActivate = async () => {
         if (!memberToActivate) return;
 
-        try {
-            await subscriptionsAPI.activate(memberToActivate);
-            // Refresh list
-            fetchMembers();
-            toast.success("Subscription activated successfully");
-        } catch (error) {
-            console.error("Failed to activate subscription:", error);
-            toast.error("Failed to activate subscription");
-        } finally {
-            setMemberToActivate(null);
-        }
+        activateSubscriptionMutation.mutate(memberToActivate, {
+            onSuccess: () => {
+                toast.success("Subscription activated successfully");
+                setMemberToActivate(null);
+            },
+            onError: (error) => {
+                console.error("Failed to activate subscription:", error);
+                toast.error("Failed to activate subscription");
+            }
+        });
     };
 
     const filtered = members.filter((m) => {
@@ -303,6 +228,16 @@ export default function MembersPage() {
             </span>
         </Button>
     )
+
+    const showLoader = isGymLoading || (currentGym && isMembersLoading && !membersData);
+
+    if (showLoader) {
+         return (
+            <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+                <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pb-28">
@@ -419,8 +354,8 @@ export default function MembersPage() {
                             </div>
                         </div>
                         <DrawerFooter>
-                            <Button onClick={handleAddMember} disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            <Button onClick={handleAddMember} disabled={addMemberMutation.isPending}>
+                                {addMemberMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Add Member
                             </Button>
                             <DrawerClose asChild>
