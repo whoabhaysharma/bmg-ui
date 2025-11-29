@@ -69,6 +69,7 @@ export function isPWAInstalled(): boolean {
   if (typeof window === 'undefined') return false;
 
   // Check if running as standalone (iOS)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window.navigator as any).standalone === true) {
     return true;
   }

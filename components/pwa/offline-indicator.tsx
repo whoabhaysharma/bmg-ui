@@ -34,7 +34,7 @@ export function OfflineIndicator() {
   return (
     <div className="fixed top-0 left-0 right-0 bg-red-500 text-white px-4 py-3 flex items-center gap-2 shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
       <AlertCircle className="w-4 h-4 flex-shrink-0" />
-      <p className="text-sm font-medium">You're offline. Some features may be unavailable.</p>
+      <p className="text-sm font-medium">You&apos;re offline. Some features may be unavailable.</p>
     </div>
   );
 }

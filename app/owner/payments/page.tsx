@@ -1,70 +1,47 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useOwnerStore } from '@/lib/store/ownerStore';
-import { paymentsAPI, settlementsAPI } from '@/lib/api/client';
 import { Loader2, IndianRupee, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-
-interface Payment {
-    id: string;
-    amount: number;
-    status: string;
-    method: string;
-    createdAt: string;
-    settlementId?: string;
-    subscription?: {
-        user?: { name: string };
-        plan?: { name: string };
-    };
-}
-
-interface Settlement {
-    id: string;
-    amount: number;
-    status: string;
-    createdAt: string;
-    transactionId?: string;
-}
+import { usePaymentsQuery, useSettlementsQuery, useUnsettledAmountQuery } from '@/lib/hooks/queries/usePayments';
 
 export default function PaymentsPage() {
     const { currentGym } = useOwnerStore();
     const [activeTab, setActiveTab] = useState<'payments' | 'settlements'>('payments');
-    const [loading, setLoading] = useState(true);
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [settlements, setSettlements] = useState<Settlement[]>([]);
-    const [unsettledAmount, setUnsettledAmount] = useState(0);
 
-    const fetchData = useCallback(async () => {
-        if (!currentGym) return;
-        setLoading(true);
-        try {
-            // Fetch Unsettled Amount
-            const unsettledRes = await settlementsAPI.getUnsettledAmount(currentGym.id);
-            const unsettledData = unsettledRes.data.data || unsettledRes.data;
-            setUnsettledAmount(unsettledData.amount || 0);
+    const {
+        data: paymentsData,
+        isLoading: isPaymentsLoading,
+        refetch: refetchPayments
+    } = usePaymentsQuery(currentGym?.id);
 
-            // Fetch Payments
-            const paymentsRes = await paymentsAPI.getAll({ gymId: currentGym.id, limit: 50 });
-            setPayments(paymentsRes.data.data || []);
+    const {
+        data: settlementsData,
+        isLoading: isSettlementsLoading,
+        refetch: refetchSettlements
+    } = useSettlementsQuery(currentGym?.id);
 
-            // Fetch Settlements
-            const settlementsRes = await settlementsAPI.getAll({ gymId: currentGym.id });
-            setSettlements(settlementsRes.data.data || []);
-        } catch (error) {
-            console.error('Failed to fetch payment data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [currentGym]);
+    const {
+        data: unsettledAmountData,
+        refetch: refetchUnsettled
+    } = useUnsettledAmountQuery(currentGym?.id);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    const payments = paymentsData || [];
+    const settlements = settlementsData || [];
+    const unsettledAmount = unsettledAmountData || 0;
 
-    if (loading && !payments.length) {
+    const handleRefresh = () => {
+        refetchPayments();
+        refetchSettlements();
+        refetchUnsettled();
+    };
+
+    const showLoader = isPaymentsLoading || isSettlementsLoading;
+
+    if (showLoader && currentGym) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
@@ -78,7 +55,7 @@ export default function PaymentsPage() {
             <div className="bg-white px-6 pt-8 pb-6 border-b border-zinc-100 sticky top-0 z-10">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold text-zinc-900">Payments & Settlements</h1>
-                    <Button variant="outline" size="icon" onClick={fetchData} className="rounded-full h-10 w-10">
+                    <Button variant="outline" size="icon" onClick={handleRefresh} className="rounded-full h-10 w-10">
                         <RefreshCw className="w-4 h-4" />
                     </Button>
                 </div>

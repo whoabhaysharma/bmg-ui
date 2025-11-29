@@ -44,7 +44,7 @@ export default function OfflinePage() {
         
         <h1 className="text-3xl font-bold mb-2 text-foreground">No Connection</h1>
         <p className="text-muted-foreground mb-6">
-          You're currently offline. Some features may be unavailable.
+          You&apos;re currently offline. Some features may be unavailable.
         </p>
 
         <div className="bg-muted p-4 rounded-lg mb-6 text-left">
@@ -65,7 +65,7 @@ export default function OfflinePage() {
 
         <p className="text-xs text-muted-foreground">
           {isOnline ? (
-            <span className="text-green-600">You're back online! Reloading...</span>
+            <span className="text-green-600">You&apos;re back online! Reloading...</span>
           ) : (
             <span>Waiting for connection...</span>
           )}

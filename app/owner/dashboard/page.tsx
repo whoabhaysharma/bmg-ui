@@ -12,16 +12,16 @@ import {
     DrawerDescription,
     DrawerClose,
 } from "@/components/ui/drawer";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useOwnerStore } from "@/lib/store/ownerStore";
-import { gymsAPI, attendanceAPI, settlementsAPI } from "@/lib/api/client";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useNotificationStore } from "@/lib/store/notificationStore";
 import { formatDistanceToNow, isPast } from "date-fns";
 import { useRouter } from "next/navigation";
+import { useNotificationsQuery, useMarkNotificationReadMutation, useMarkAllNotificationsReadMutation } from "@/lib/hooks/queries/useNotifications";
+import { useGymStatsQuery, useCheckInMutation } from "@/lib/hooks/queries/useDashboard";
 
 // ---------------------------------------
 // Types
@@ -45,11 +45,14 @@ interface RecentItemProps {
 export function OwnerHeader() {
     const { currentGym } = useOwnerStore();
     const user = { name: currentGym?.ownerName || 'Gym Owner', avatar: 'GO' };
-    const { notifications, unreadCount, fetchNotifications, markAllAsRead, markAsRead } = useNotificationStore();
 
-    useEffect(() => {
-        fetchNotifications();
-    }, [fetchNotifications]);
+    // React Query Hooks
+    const { data, isLoading } = useNotificationsQuery();
+    const markReadMutation = useMarkNotificationReadMutation();
+    const markAllReadMutation = useMarkAllNotificationsReadMutation();
+
+    const notifications = data?.notifications || [];
+    const unreadCount = data?.unreadCount || 0;
 
     return (
         <header className={'bg-transparent pt-6 py-4'}>
@@ -91,7 +94,11 @@ export function OwnerHeader() {
                             </div>
 
                             <div className="px-4 pb-4 max-h-[50vh] overflow-y-auto">
-                                {notifications.length === 0 ? (
+                                {isLoading ? (
+                                    <div className="flex justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
+                                    </div>
+                                ) : notifications.length === 0 ? (
                                     <div className="text-center py-8 text-zinc-400 text-sm">
                                         No notifications yet.
                                     </div>
@@ -99,7 +106,7 @@ export function OwnerHeader() {
                                     notifications.map((notif) => (
                                         <div
                                             key={notif.id}
-                                            onClick={() => markAsRead(notif.id)}
+                                            onClick={() => !notif.isRead && markReadMutation.mutate(notif.id)}
                                             className={`p-4 mb-2 rounded-2xl border border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50 transition-all cursor-pointer group flex gap-4 items-start ${!notif.isRead ? 'bg-blue-50/50 border-blue-100' : 'bg-white'
                                                 }`}
                                         >
@@ -124,7 +131,7 @@ export function OwnerHeader() {
 
                             <DrawerFooter>
                                 <button
-                                    onClick={() => markAllAsRead()}
+                                    onClick={() => markAllReadMutation.mutate()}
                                     className="w-full bg-zinc-900 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-zinc-200 hover:bg-zinc-800 transition-colors"
                                 >
                                     Mark all as read
@@ -251,18 +258,14 @@ function RecentActivityList({ items }: { items: RecentItemProps[] }) {
 export default function DashboardContent() {
     const router = useRouter();
     const { currentGym, isLoading: isGymLoading } = useOwnerStore();
-    const [stats, setStats] = useState({
-        totalRevenue: 0,
-        activeMembers: 0,
-        unsettledAmount: 0,
-        recentActivity: [] as RecentItemProps[]
-    });
-    const [loading, setLoading] = useState(true);
+
+    // Use React Query for stats
+    const { data: stats, isLoading: isStatsLoading } = useGymStatsQuery(currentGym?.id);
+    const checkInMutation = useCheckInMutation(currentGym?.id || '');
 
     // Check-in Verification State
     const [isCheckInDrawerOpen, setIsCheckInDrawerOpen] = useState(false);
     const [accessCode, setAccessCode] = useState('');
-    const [checkInLoading, setCheckInLoading] = useState(false);
     const [checkInResult, setCheckInResult] = useState<{
         success: boolean;
         message: string;
@@ -275,34 +278,29 @@ export default function DashboardContent() {
     const handleVerifyCheckIn = async () => {
         if (!accessCode.trim() || !currentGym) return;
 
-        setCheckInLoading(true);
-        setCheckInResult(null);
-
-        try {
-            const res = await attendanceAPI.verifyCheckIn(currentGym.id, accessCode);
-            const data = res.data.data || res.data;
-
-            setCheckInResult({
-                success: true,
-                message: 'Check-in verified successfully!',
-                user: data.user?.name || 'Unknown User',
-                phone: data.user?.mobileNumber,
-                plan: data.subscription?.plan?.name,
-                // Ensure backend sends 'endDate' inside subscription object
-                expiryDate: data.subscription?.endDate
-            });
-            setAccessCode('');
+        checkInMutation.mutate(accessCode, {
+            onSuccess: (res) => {
+                const data = res.data.data || res.data;
+                setCheckInResult({
+                    success: true,
+                    message: 'Check-in verified successfully!',
+                    user: data.user?.name || 'Unknown User',
+                    phone: data.user?.mobileNumber,
+                    plan: data.subscription?.plan?.name,
+                    expiryDate: data.subscription?.endDate
+                });
+                setAccessCode('');
+            },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            console.error("Check-in verification failed:", error);
-            const errorMsg = error.response?.data?.error || 'Verification failed. Please try again.';
-            setCheckInResult({
-                success: false,
-                message: errorMsg
-            });
-        } finally {
-            setCheckInLoading(false);
-        }
+            onError: (error: any) => {
+                 console.error("Check-in verification failed:", error);
+                 const errorMsg = error.response?.data?.error || 'Verification failed. Please try again.';
+                 setCheckInResult({
+                     success: false,
+                     message: errorMsg
+                 });
+            }
+        });
     };
 
     const resetCheckInState = (open: boolean) => {
@@ -314,46 +312,6 @@ export default function DashboardContent() {
             }, 300); // Delay clear slightly for smooth transition
         }
     };
-
-    useEffect(() => {
-        const fetchStats = async () => {
-            if (!currentGym) {
-                if (!isGymLoading) setLoading(false);
-                return;
-            }
-            try {
-                const [statsRes, unsettledRes] = await Promise.all([
-                    gymsAPI.getStats(currentGym.id),
-                    settlementsAPI.getUnsettledAmount(currentGym.id)
-                ]);
-
-                const data = statsRes.data.data || statsRes.data;
-                const unsettledData = unsettledRes.data.data || unsettledRes.data; // Assuming { amount: 1000 }
-
-                setStats({
-                    totalRevenue: data.totalRevenue,
-                    activeMembers: data.activeMembers,
-                    unsettledAmount: unsettledData.amount || 0,
-                    recentActivity: data.recentActivity.map((act: { title: string; time: string; amount?: number }) => ({
-                        title: act.title,
-                        time: new Date(act.time).toLocaleDateString(),
-                        amount: act.amount ? `+ ₹${act.amount}` : undefined
-                    }))
-                });
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (error: any) {
-                console.error("Failed to fetch dashboard stats:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStats();
-    }, [currentGym, isGymLoading]); // Removed fetchStats from deps as it's defined inside useEffect
-
-    // Check-in verification error handling
-    // ... (no changes needed here as error: any is standard for catch blocks, but I'll suppress it if needed or leave it as it's common)
-    // Actually, let's fix the recentActivity map type
-
 
     // Helper to calculate expiry visual state
     const getExpiryInfo = (dateString?: string) => {
@@ -368,13 +326,32 @@ export default function DashboardContent() {
         return { label: `Expires ${relative}`, color: 'text-emerald-700', bg: 'bg-emerald-50', expired: false };
     };
 
-    if (loading || isGymLoading) {
+    // If gym is loading, show loader. If gym is loaded but null (no gym), don't show loader.
+    // If gym exists, check if stats are loading.
+    const showLoader = isGymLoading || (currentGym && isStatsLoading && !stats);
+
+    if (showLoader) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
             </div>
         )
     }
+
+    // Default stats if failed or loading
+    const displayStats = stats || {
+        totalRevenue: 0,
+        activeMembers: 0,
+        unsettledAmount: 0,
+        recentActivity: [] as RecentItemProps[]
+    };
+
+    // Format recent activity here if needed, but it was done in hook
+    const recentActivityFormatted = displayStats.recentActivity.map((act) => ({
+        ...act,
+        time: act.time ? new Date(act.time).toLocaleDateString() : 'N/A', // ensure date formatting if raw data differs
+        amount: act.amount ? `+ ₹${act.amount}` : undefined
+    }));
 
     return (
         <div className="space-y-6 px-4">
@@ -383,18 +360,18 @@ export default function DashboardContent() {
             <div className="grid grid-cols-2 gap-4">
                 <StatsCard
                     label="Total Revenue"
-                    value={`₹${stats.totalRevenue.toLocaleString()}`}
+                    value={`₹${displayStats.totalRevenue.toLocaleString()}`}
                     change="12%"
                     positive
                 />
                 <StatsCard
                     label="Active Members"
-                    value={stats.activeMembers.toString()}
+                    value={displayStats.activeMembers.toString()}
                 />
                 <StatsCard
                     label="Unsettled Amount"
-                    value={`₹${stats.unsettledAmount.toLocaleString()}`}
-                    change={stats.unsettledAmount > 0 ? "Pending" : undefined}
+                    value={`₹${displayStats.unsettledAmount.toLocaleString()}`}
+                    change={displayStats.unsettledAmount > 0 ? "Pending" : undefined}
                     positive={false} // Neutral or warning color
                 />
             </div>
@@ -404,7 +381,7 @@ export default function DashboardContent() {
                 onPaymentsClick={() => router.push('/owner/payments')}
             />
 
-            <RecentActivityList items={stats.recentActivity} />
+            <RecentActivityList items={recentActivityFormatted} />
 
             {/* Check-in Verification Drawer */}
             <Drawer open={isCheckInDrawerOpen} onOpenChange={resetCheckInState}>
@@ -439,10 +416,10 @@ export default function DashboardContent() {
                                 </div>
                                 <Button
                                     onClick={handleVerifyCheckIn}
-                                    disabled={checkInLoading || accessCode.length < 3}
+                                    disabled={checkInMutation.isPending || accessCode.length < 3}
                                     className="w-full h-14 text-base font-bold bg-zinc-900 hover:bg-zinc-800 rounded-2xl shadow-xl shadow-zinc-200 active:scale-[0.98] transition-all"
                                 >
-                                    {checkInLoading ? (
+                                    {checkInMutation.isPending ? (
                                         <>
                                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                             Verifying...

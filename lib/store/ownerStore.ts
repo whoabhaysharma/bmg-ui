@@ -37,6 +37,7 @@ export const useOwnerStore = create<OwnerStore>()(
                 set({ isLoading: true, error: null });
                 try {
                     const res = await gymsAPI.getMyOwned();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const gyms = (res.data.data || res.data).map((gym: any) => ({
                         ...gym,
                         ownerName: gym.owner?.name
@@ -48,6 +49,7 @@ export const useOwnerStore = create<OwnerStore>()(
                         currentGym: get().currentGym || (gyms.length > 0 ? gyms[0] : null),
                         isLoading: false
                     });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
                     console.error('Failed to fetch gyms:', error);
                     set({
