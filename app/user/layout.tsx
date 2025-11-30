@@ -18,13 +18,13 @@ export function UserFooter() {
     const navItems = [
         { icon: Home, label: 'Home', path: '/user/dashboard' },
         { icon: Compass, label: 'Explore', path: '/user/explore' },
-        { icon: Activity, label: 'Activity', path: '/user/activity' }, // We might need to create this or link to history
+        { icon: Activity, label: 'Activity', path: '/user/activity' },
         { icon: Settings, label: 'Profile', path: '/user/settings' },
     ];
 
     return (
-        <div className="fixed bottom-3 left-0 right-0 z-50 flex justify-center pointer-events-none">
-            <nav className="pointer-events-auto bg-white/90 backdrop-blur-2xl border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl px-2 py-2 flex items-center justify-between gap-1 w-[90%] max-w-[360px]">
+        <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
+            <nav className="pointer-events-auto bg-zinc-900/90 backdrop-blur-xl border border-white/10 shadow-2xl shadow-zinc-900/20 rounded-[24px] px-2 py-2 flex items-center justify-between gap-1 w-[90%] max-w-[340px]">
                 {navItems.map((item) => {
                     const isActive = activeTab === item.path;
                     return (
@@ -34,15 +34,15 @@ export function UserFooter() {
                                 setActiveTab(item.path);
                                 router.push(item.path);
                             }}
-                            className={`relative flex flex-col items-center justify-center h-14 w-14 rounded-xl transition-all duration-300 ${isActive ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
+                            className={`relative flex flex-col items-center justify-center h-12 w-12 rounded-2xl transition-all duration-300 ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
                                 }`}
                         >
                             {isActive && (
-                                <span className="absolute inset-0 bg-zinc-100 rounded-xl -z-10 scale-100 transition-transform duration-300" />
+                                <span className="absolute inset-0 bg-white/10 rounded-2xl -z-10 scale-100 transition-transform duration-300" />
                             )}
 
                             <item.icon
-                                className={`w-6 h-6 transition-all duration-300 ${isActive ? 'stroke-[2.5px] scale-110' : 'stroke-2 scale-100'
+                                className={`w-5 h-5 transition-all duration-300 ${isActive ? 'stroke-[2.5px] scale-110' : 'stroke-2 scale-100'
                                     }`}
                             />
                         </button>
