@@ -51,8 +51,10 @@ export function OwnerHeader() {
     const markReadMutation = useMarkNotificationReadMutation();
     const markAllReadMutation = useMarkAllNotificationsReadMutation();
 
-    const notifications = data?.notifications || [];
-    const unreadCount = data?.unreadCount || 0;
+    // Safely extract notifications and unreadCount with proper fallbacks
+    const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+    const unreadCount = typeof data?.unreadCount === 'number' ? data.unreadCount : 0;
+
 
     return (
         <header className={'bg-transparent pt-6 py-4'}>
@@ -293,12 +295,12 @@ export default function DashboardContent() {
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (error: any) => {
-                 console.error("Check-in verification failed:", error);
-                 const errorMsg = error.response?.data?.error || 'Verification failed. Please try again.';
-                 setCheckInResult({
-                     success: false,
-                     message: errorMsg
-                 });
+                console.error("Check-in verification failed:", error);
+                const errorMsg = error.response?.data?.error || 'Verification failed. Please try again.';
+                setCheckInResult({
+                    success: false,
+                    message: errorMsg
+                });
             }
         });
     };

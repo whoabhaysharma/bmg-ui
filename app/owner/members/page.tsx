@@ -157,8 +157,23 @@ export default function MembersPage() {
     const plans = (plansData as any[]) || [];
 
     const handleAddMember = async () => {
-        if (!newMember.name || !newMember.phone || !newMember.planId) {
-            toast.error("Please fill all fields")
+        if (!currentGym) {
+            toast.error("No gym selected. Please create a gym first.")
+            return
+        }
+
+        if (!newMember.name.trim()) {
+            toast.error("Please enter member's name")
+            return
+        }
+
+        if (!newMember.phone.trim()) {
+            toast.error("Please enter member's phone number")
+            return
+        }
+
+        if (!newMember.planId) {
+            toast.error("Please select a membership plan")
             return
         }
 
@@ -232,9 +247,59 @@ export default function MembersPage() {
     const showLoader = isGymLoading || (currentGym && isMembersLoading && !membersData);
 
     if (showLoader) {
-         return (
+        return (
             <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
+            </div>
+        )
+    }
+
+    // Show no gym state
+    if (!currentGym && !isGymLoading) {
+        return (
+            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center space-y-6">
+                    <div className="bg-zinc-100 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center">
+                        <Users className="w-12 h-12 text-zinc-400" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-zinc-900">No Gym Found</h2>
+                        <p className="text-zinc-500 text-sm">
+                            You need to create a gym before you can add members.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => window.location.href = '/owner/settings'}
+                        className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 rounded-2xl font-semibold"
+                    >
+                        Go to Settings
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+
+    // Show no plans state
+    if (currentGym && plans.length === 0 && !isGymLoading) {
+        return (
+            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center space-y-6">
+                    <div className="bg-zinc-100 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center">
+                        <CreditCard className="w-12 h-12 text-zinc-400" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-zinc-900">No Membership Plans</h2>
+                        <p className="text-zinc-500 text-sm">
+                            You need to create at least one membership plan before adding members.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => window.location.href = '/owner/settings/plans'}
+                        className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 rounded-2xl font-semibold"
+                    >
+                        Create Membership Plan
+                    </Button>
+                </div>
             </div>
         )
     }
@@ -344,11 +409,17 @@ export default function MembersPage() {
                                         <SelectValue placeholder="Select a plan" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {plans.map((plan) => (
-                                            <SelectItem key={plan.id} value={plan.id}>
-                                                {plan.name} - ₹{plan.price}
-                                            </SelectItem>
-                                        ))}
+                                        {plans.length === 0 ? (
+                                            <div className="p-4 text-center text-sm text-zinc-500">
+                                                No plans available. Create one first.
+                                            </div>
+                                        ) : (
+                                            plans.map((plan) => (
+                                                <SelectItem key={plan.id} value={plan.id}>
+                                                    {plan.name} - ₹{plan.price}
+                                                </SelectItem>
+                                            ))
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>

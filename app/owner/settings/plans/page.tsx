@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { plansAPI } from "@/lib/api/client"
 import { useOwnerStore } from "@/lib/store/ownerStore"
 import {
@@ -13,7 +14,8 @@ import {
     Clock,
     ChevronLeft,
     Banknote,
-    CalendarDays
+    CalendarDays,
+    Loader2
 } from "lucide-react"
 
 // SHADCN / UI Imports
@@ -179,6 +181,7 @@ function PlanItem({ plan, onToggleStatus, onDelete }: {
 // Main Page Component
 // ---------------------------------------
 export default function MembershipPlansPage() {
+    const router = useRouter()
     const [search, setSearch] = useState("")
     const [loading, setLoading] = useState(true)
     const [plans, setPlans] = useState<GymSubscriptionPlan[]>([])
@@ -192,6 +195,7 @@ export default function MembershipPlansPage() {
     const [newPlanDesc, setNewPlanDesc] = useState("")
     const [duration, setDuration] = useState({ value: 1, unit: PlanType.MONTH })
     const [planToDelete, setPlanToDelete] = useState<string | null>(null)
+    const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
         const fetchPlans = async () => {
@@ -217,8 +221,27 @@ export default function MembershipPlansPage() {
     }, [currentGym, isGymLoading])
 
     const handleCreatePlan = async () => {
-        if (!currentGym || !newPlanName || !newPlanPrice) return
+        if (!currentGym) {
+            toast.error("No gym selected. Please create a gym first.")
+            return
+        }
 
+        if (!newPlanName.trim()) {
+            toast.error("Please enter a plan name")
+            return
+        }
+
+        if (!newPlanPrice || Number(newPlanPrice) <= 0) {
+            toast.error("Please enter a valid price")
+            return
+        }
+
+        if (duration.value <= 0) {
+            toast.error("Please enter a valid duration")
+            return
+        }
+
+        setIsCreating(true)
         try {
             await plansAPI.create({
                 gymId: currentGym.id,
@@ -244,6 +267,8 @@ export default function MembershipPlansPage() {
         } catch (error) {
             console.error("Failed to create plan:", error)
             toast.error("Failed to create plan")
+        } finally {
+            setIsCreating(false)
         }
     }
 
@@ -282,6 +307,40 @@ export default function MembershipPlansPage() {
     }
 
     const filteredPlans = plans.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+                <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
+            </div>
+        )
+    }
+
+    // Show no gym state
+    if (!currentGym && !isGymLoading) {
+        return (
+            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center space-y-6">
+                    <div className="bg-zinc-100 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center">
+                        <Dumbbell className="w-12 h-12 text-zinc-400" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-zinc-900">No Gym Found</h2>
+                        <p className="text-zinc-500 text-sm">
+                            You need to create a gym before you can manage membership plans.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => router.push('/owner/settings')}
+                        className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 rounded-2xl font-semibold"
+                    >
+                        Go to Settings
+                    </Button>
+                </div>
+            </div>
+        )
+    }
 
     // Helper for Quick Duration Chips
     const presets = [
@@ -478,9 +537,17 @@ export default function MembershipPlansPage() {
                     <DrawerFooter className="p-6 pt-2">
                         <Button
                             onClick={handleCreatePlan}
+                            disabled={isCreating}
                             className="w-full h-14 text-base font-bold bg-zinc-900 hover:bg-zinc-800 rounded-2xl shadow-xl shadow-zinc-200"
                         >
-                            Create Plan
+                            {isCreating ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Creating...
+                                </>
+                            ) : (
+                                'Create Plan'
+                            )}
                         </Button>
                         <DrawerClose asChild>
                             <Button variant="ghost" className="w-full h-12 rounded-xl text-zinc-500 font-semibold hover:bg-zinc-50 hover:text-zinc-900">Cancel</Button>
