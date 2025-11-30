@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useOwnerStore } from "@/lib/store/ownerStore"
-import { Search, UserPlus, Phone, MoreHorizontal, CalendarClock, Users, CreditCard, Calendar, Loader2 } from "lucide-react"
+import { Search, UserPlus, Phone, MoreHorizontal, CalendarClock, Users, CreditCard, Calendar, Loader2, ArrowRight, Filter } from "lucide-react"
 
 // SHADCN / UI Imports
 import { Input } from "@/components/ui/input"
@@ -46,89 +46,120 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useMembersQuery, usePlansQuery, useAddMemberMutation, useActivateSubscriptionMutation, Member } from "@/lib/hooks/queries/useMembers"
+import { cn } from "@/lib/utils"
+
+// ---------------------------------------
+// Helper: Status Styles
+// ---------------------------------------
+const getStatusStyles = (status: string) => {
+    switch (status) {
+        case 'active': return { color: 'bg-emerald-500', ring: 'ring-emerald-100', text: 'text-emerald-600', bg: 'bg-emerald-50' };
+        case 'expiring': return { color: 'bg-amber-500', ring: 'ring-amber-100', text: 'text-amber-600', bg: 'bg-amber-50' };
+        case 'inactive': return { color: 'bg-zinc-300', ring: 'ring-zinc-100', text: 'text-zinc-500', bg: 'bg-zinc-100' };
+        case 'pending': return { color: 'bg-blue-500', ring: 'ring-blue-100', text: 'text-blue-600', bg: 'bg-blue-50' };
+        default: return { color: 'bg-zinc-300', ring: 'ring-zinc-100', text: 'text-zinc-500', bg: 'bg-zinc-100' };
+    }
+}
 
 // ---------------------------------------
 // Component: Member Item 
 // ---------------------------------------
 function MemberItem({ id, name, phone, accessCode, status, lastVisit, planName, endDate, onActivate }: Member & { onActivate: (id: string) => void }) {
     const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-
-    const statusColor = {
-        active: "bg-emerald-500 ring-emerald-100",
-        inactive: "bg-zinc-300 ring-zinc-100",
-        expiring: "bg-amber-500 ring-amber-100",
-        pending: "bg-blue-500 ring-blue-100"
-    }[status]
+    const styles = getStatusStyles(status);
 
     return (
-        <div className="group relative flex items-center gap-3 p-4 bg-white border border-zinc-100 rounded-2xl shadow-sm hover:border-zinc-200 transition-all duration-200">
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-                <Avatar className="h-11 w-11 border border-zinc-50 bg-zinc-50">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} />
-                    <AvatarFallback className="bg-zinc-100 text-zinc-600 font-bold text-xs">{initials}</AvatarFallback>
-                </Avatar>
-                <div className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white ${statusColor}`} />
-            </div>
+        <div className="group relative bg-white border border-zinc-100 rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-md transition-all duration-200 overflow-hidden">
 
-            {/* Details */}
-            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                <h3 className="font-bold text-sm text-zinc-800 truncate leading-tight">{name}</h3>
-                <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
-                        <Phone className="h-3 w-3 text-zinc-400" />
-                        <span className="truncate">{phone}</span>
+
+            <div className="p-4 flex items-center gap-3.5">
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm ring-1 ring-zinc-100">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} />
+                        <AvatarFallback className="bg-zinc-50 text-zinc-600 font-bold text-xs">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white ${styles.color}`} />
+                </div>
+
+                {/* Main Info */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                        <h3 className="font-bold text-[15px] text-zinc-900 truncate">{name}</h3>
+                        {/* Mobile Status Badge for Clarity */}
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider", styles.bg, styles.text)}>
+                            {status}
+                        </span>
                     </div>
-                    {planName && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                            <CreditCard className="h-3 w-3 text-zinc-300" />
-                            <span className="truncate">{planName}</span>
+
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-xs text-zinc-500">
+                            <span className="truncate">{phone}</span>
+                            {planName && (
+                                <>
+                                    <span className="w-1 h-1 rounded-full bg-zinc-300" />
+                                    <span className="font-medium text-zinc-700 truncate">{planName}</span>
+                                </>
+                            )}
                         </div>
-                    )}
-                    <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                        <CalendarClock className="h-3 w-3 text-zinc-300" />
-                        <span>Last: <span className="text-zinc-500 font-medium">{lastVisit || 'N/A'}</span></span>
+
+                        {/* Meta Info Row */}
+                        <div className="flex items-center gap-3 text-[11px] text-zinc-400 mt-1">
+                            {lastVisit && (
+                                <div className="flex items-center gap-1">
+                                    <CalendarClock className="h-3 w-3" />
+                                    <span>Last: {lastVisit}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    {endDate && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                            <Calendar className="h-3 w-3 text-zinc-300" />
-                            <span>Expires: <span className="text-zinc-500 font-medium">{endDate}</span></span>
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* Access Code */}
-            <div className="flex flex-col items-center justify-center bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100/80 min-w-[72px]">
-                <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider leading-none mb-0.5">Code</span>
-                <span className="font-mono text-lg font-bold text-zinc-900 leading-none tracking-tight">{accessCode}</span>
-            </div>
+            {/* Bottom Action Bar / Code Display */}
+            <div className="bg-zinc-50/50 border-t border-zinc-100 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="bg-white border border-zinc-200 rounded-md px-2 py-1 flex flex-col items-center min-w-[60px]">
+                        <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider">Code</span>
+                        <span className="font-mono text-sm font-bold text-zinc-900 tracking-wide">{accessCode}</span>
+                    </div>
+                    {endDate && (
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-zinc-400">Expires</span>
+                            <span className="text-xs font-semibold text-zinc-700">{endDate}</span>
+                        </div>
+                    )}
+                </div>
 
-            {/* Actions */}
-            <div className="flex-shrink-0">
-                {status === 'pending' ? (
-                    <Button
-                        size="sm"
-                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 rounded-lg shadow-sm shadow-blue-200"
-                        onClick={() => onActivate(id)}
-                    >
-                        Activate
-                    </Button>
-                ) : (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-zinc-300 hover:text-zinc-600 hover:bg-transparent">
-                                <MoreHorizontal className="h-5 w-5" />
+                <div className="flex items-center gap-2">
+                    {status === 'pending' ? (
+                        <Button
+                            size="sm"
+                            className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 rounded-xl shadow-sm shadow-blue-200"
+                            onClick={() => onActivate(id)}
+                        >
+                            Activate
+                        </Button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-zinc-200 hover:bg-zinc-100" onClick={() => window.open(`tel:${phone}`, '_self')}>
+                                <Phone className="h-4 w-4 text-zinc-500" />
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl p-1">
-                            <DropdownMenuItem className="cursor-pointer text-xs font-medium rounded-lg h-9">View Profile</DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer text-xs font-medium rounded-lg h-9" onClick={() => window.open(`tel:${phone}`, '_self')}>Call Member</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer text-xs font-medium rounded-lg h-9">Delete Member</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-zinc-100">
+                                        <MoreHorizontal className="h-4 w-4 text-zinc-400" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 rounded-xl p-1">
+                                    <DropdownMenuItem className="cursor-pointer text-xs font-medium rounded-lg h-9">View Profile</DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer text-xs font-medium rounded-lg h-9">Delete Member</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
@@ -146,7 +177,6 @@ export default function MembersPage() {
 
     const { currentGym, isLoading: isGymLoading } = useOwnerStore()
 
-    // React Query Hooks
     const { data: membersData, isLoading: isMembersLoading } = useMembersQuery(currentGym?.id);
     const { data: plansData } = usePlansQuery(currentGym?.id);
     const addMemberMutation = useAddMemberMutation(currentGym?.id || '');
@@ -158,57 +188,35 @@ export default function MembersPage() {
 
     const handleAddMember = async () => {
         if (!currentGym) {
-            toast.error("No gym selected. Please create a gym first.")
+            toast.error("No gym selected.")
             return
         }
-
-        if (!newMember.name.trim()) {
-            toast.error("Please enter member's name")
-            return
-        }
-
-        if (!newMember.phone.trim()) {
-            toast.error("Please enter member's phone number")
-            return
-        }
-
-        if (!newMember.planId) {
-            toast.error("Please select a membership plan")
+        if (!newMember.name.trim() || !newMember.phone.trim() || !newMember.planId) {
+            toast.error("Please fill all details")
             return
         }
 
         addMemberMutation.mutate(
-            {
-                name: newMember.name,
-                mobileNumber: newMember.phone,
-                planId: newMember.planId
-            },
+            { name: newMember.name, mobileNumber: newMember.phone, planId: newMember.planId },
             {
                 onSuccess: () => {
                     setIsAddMemberOpen(false)
                     setNewMember({ name: '', phone: '', planId: '' })
                     toast.success("Member added successfully")
                 },
-                onError: (error) => {
-                    console.error("Failed to add member", error)
-                    toast.error("Failed to add member")
-                }
+                onError: () => toast.error("Failed to add member")
             }
         );
     }
 
     const confirmActivate = async () => {
         if (!memberToActivate) return;
-
         activateSubscriptionMutation.mutate(memberToActivate, {
             onSuccess: () => {
-                toast.success("Subscription activated successfully");
+                toast.success("Subscription activated");
                 setMemberToActivate(null);
             },
-            onError: (error) => {
-                console.error("Failed to activate subscription:", error);
-                toast.error("Failed to activate subscription");
-            }
+            onError: () => toast.error("Failed to activate")
         });
     };
 
@@ -226,22 +234,26 @@ export default function MembersPage() {
         pending: members.filter(m => m.status === 'pending').length,
     };
 
-    const FilterButton = ({ id, label, count }: { id: typeof filter, label: string, count: number }) => (
-        <Button
-            variant="ghost"
+    const FilterPill = ({ id, label, count }: { id: typeof filter, label: string, count: number }) => (
+        <button
             onClick={() => setFilter(id)}
-            className={`
-                h-8 text-xs font-medium rounded-lg transition-all border
-                ${filter === id
-                    ? 'bg-zinc-900 text-white border-zinc-900 shadow-md shadow-zinc-200'
-                    : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50'}
-            `}
+            className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border",
+                filter === id
+                    ? "bg-zinc-900 text-white border-zinc-900 shadow-md shadow-zinc-200 scale-105"
+                    : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50"
+            )}
         >
             {label}
-            <span className={`ml-1.5 ${filter === id ? 'opacity-100 text-zinc-400' : 'opacity-50'}`}>
-                {count}
-            </span>
-        </Button>
+            {count > 0 && (
+                <span className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[10px]",
+                    filter === id ? "bg-zinc-800 text-zinc-200" : "bg-zinc-100 text-zinc-400"
+                )}>
+                    {count}
+                </span>
+            )}
+        </button>
     )
 
     const showLoader = isGymLoading || (currentGym && isMembersLoading && !membersData);
@@ -254,24 +266,19 @@ export default function MembersPage() {
         )
     }
 
-    // Show no gym state
+    // Empty State: No Gym
     if (!currentGym && !isGymLoading) {
         return (
-            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center space-y-6">
-                    <div className="bg-zinc-100 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center">
-                        <Users className="w-12 h-12 text-zinc-400" />
+            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-6">
+                <div className="max-w-md w-full text-center space-y-6">
+                    <div className="w-20 h-20 bg-zinc-200/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-10 h-10 text-zinc-400" />
                     </div>
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-bold text-zinc-900">No Gym Found</h2>
-                        <p className="text-zinc-500 text-sm">
-                            You need to create a gym before you can add members.
-                        </p>
+                    <div>
+                        <h2 className="text-xl font-bold text-zinc-900">Setup Required</h2>
+                        <p className="text-zinc-500 text-sm mt-2 px-8">Create a gym profile to start managing members.</p>
                     </div>
-                    <Button
-                        onClick={() => window.location.href = '/owner/settings'}
-                        className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 rounded-2xl font-semibold"
-                    >
+                    <Button onClick={() => window.location.href = '/owner/settings'} className="w-full h-12 rounded-2xl">
                         Go to Settings
                     </Button>
                 </div>
@@ -279,175 +286,159 @@ export default function MembersPage() {
         )
     }
 
-    // Show no plans state
-    if (currentGym && plans.length === 0 && !isGymLoading) {
-        return (
-            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8 text-center space-y-6">
-                    <div className="bg-zinc-100 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center">
-                        <CreditCard className="w-12 h-12 text-zinc-400" />
-                    </div>
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-bold text-zinc-900">No Membership Plans</h2>
-                        <p className="text-zinc-500 text-sm">
-                            You need to create at least one membership plan before adding members.
-                        </p>
-                    </div>
-                    <Button
-                        onClick={() => window.location.href = '/owner/settings/plans'}
-                        className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 rounded-2xl font-semibold"
-                    >
-                        Create Membership Plan
-                    </Button>
-                </div>
-            </div>
-        )
-    }
-
     return (
-        <div className="min-h-screen bg-[#FAFAFA] pb-28">
+        <div className="min-h-screen bg-[#FAFAFA] pb-32">
 
-            {/* --- UNIFIED HEADER CARD ---
-               This merges the Title, Search, and Filters into one 
-               clean block at the top, removing the "disconnected" feel.
-            */}
-            <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.02)] border-b border-zinc-100 px-5 pt-8 pb-6 space-y-5">
-
-                {/* Top Row: Title & Count */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Users className="w-6 h-6 text-zinc-800" fill="currentColor" fillOpacity={0.1} />
-                        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Members</h1>
+            {/* --- UNIFIED APP HEADER --- */}
+            <div className="bg-white pb-4 pt-8 sticky top-0 z-30 shadow-[0_4px_30px_rgba(0,0,0,0.03)] rounded-b-[32px]">
+                <div className="px-5">
+                    {/* Top Row */}
+                    <div className="flex items-center justify-between mb-5">
+                        <h1 className="text-2xl font-black text-zinc-900 tracking-tight">Members</h1>
+                        <div className="flex items-center gap-2">
+                            {plans.length === 0 && (
+                                <Badge variant="destructive" className="animate-pulse rounded-full px-3">No Plans Configured</Badge>
+                            )}
+                            <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center">
+                                <span className="font-bold text-sm text-zinc-600">{counts.all}</span>
+                            </div>
+                        </div>
                     </div>
-                    <Badge variant="secondary" className="bg-zinc-100 text-zinc-500 hover:bg-zinc-100 font-bold px-3 py-1 text-xs">
-                        {counts.all} Total
-                    </Badge>
-                </div>
 
-                {/* Search Bar */}
-                <div className="relative group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-zinc-800 transition-colors" />
-                    <Input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search name, phone, code..."
-                        className="w-full pl-10 h-12 bg-zinc-50 border-zinc-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all placeholder:text-zinc-400"
-                    />
-                </div>
+                    {/* Search Field */}
+                    <div className="relative mb-5">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
+                            <Search className="h-5 w-5" />
+                        </div>
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Find by name, phone, code..."
+                            className="w-full h-14 pl-12 bg-zinc-50 border-transparent rounded-2xl text-base focus:bg-white focus:border-zinc-200 focus:ring-0 transition-all shadow-inner"
+                        />
+                    </div>
 
-                {/* Filter Row */}
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                    <FilterButton id="all" label="All" count={counts.all} />
-                    <FilterButton id="pending" label="Pending" count={counts.pending} />
-                    <FilterButton id="active" label="Active" count={counts.active} />
-                    <FilterButton id="expiring" label="Expiring" count={counts.expiring} />
-                    <FilterButton id="inactive" label="Inactive" count={counts.inactive} />
+                    {/* Horizontal Scroll Filters */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-5 px-5">
+                        <FilterPill id="all" label="All" count={counts.all} />
+                        <FilterPill id="pending" label="Pending" count={counts.pending} />
+                        <FilterPill id="active" label="Active" count={counts.active} />
+                        <FilterPill id="expiring" label="Expiring" count={counts.expiring} />
+                        <FilterPill id="inactive" label="Inactive" count={counts.inactive} />
+                    </div>
                 </div>
             </div>
 
+            {/* --- MEMBERS LIST --- */}
+            <div className="px-4 py-6 space-y-4">
+                {filtered.map((member) => (
+                    <MemberItem key={member.id} {...member} onActivate={(id) => setMemberToActivate(id)} />
+                ))}
 
-            {/* --- CONTENT LIST --- */}
-            <div className="px-4 py-6 space-y-3">
-                {filtered.map((member) => <MemberItem key={member.id} {...member} onActivate={(id) => setMemberToActivate(id)} />)}
-
+                {/* Empty Search Result */}
                 {filtered.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="bg-white p-4 rounded-full mb-3 shadow-sm border border-zinc-100">
-                            <Search className="h-6 w-6 text-zinc-300" />
-                        </div>
-                        <h3 className="text-zinc-900 font-bold text-sm">No members found</h3>
-                        <p className="text-zinc-400 text-xs mt-1">Try adjusting your filters</p>
+                    <div className="flex flex-col items-center justify-center py-20 opacity-60">
+                        <Filter className="w-12 h-12 text-zinc-300 mb-4" />
+                        <p className="text-zinc-900 font-semibold">No members found</p>
+                        <p className="text-sm text-zinc-500">Try changing filters or search terms</p>
                     </div>
                 )}
             </div>
 
-            {/* Floating Action Button */}
-            {/* Add Member Drawer */}
+            {/* --- FAB (Floating Action Button) --- */}
             <Drawer open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
                 <DrawerTrigger asChild>
-                    <div className="fixed bottom-24 right-4 z-40">
-                        <Button
-                            size="icon"
-                            className="h-14 w-14 rounded-2xl shadow-xl shadow-zinc-900/20 bg-zinc-900 hover:bg-zinc-800 active:scale-95 transition-all border border-zinc-700"
-                        >
-                            <UserPlus className="h-6 w-6 text-white" strokeWidth={2} />
-                        </Button>
+                    <div className="fixed bottom-24 right-5 z-40">
+                        <button className="group relative flex items-center justify-center h-16 w-16 bg-zinc-900 rounded-[24px] shadow-2xl shadow-zinc-900/30 text-white hover:scale-105 active:scale-95 transition-all duration-300">
+                            <UserPlus className="w-7 h-7" strokeWidth={2} />
+                            {/* Pulse Effect */}
+                            {counts.all === 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-4 w-4 bg-sky-500 border-2 border-white"></span>
+                                </span>
+                            )}
+                        </button>
                     </div>
                 </DrawerTrigger>
-                <DrawerContent>
-                    <div className="mx-auto w-full max-w-sm">
-                        <DrawerHeader>
-                            <DrawerTitle>Add New Member</DrawerTitle>
-                            <DrawerDescription>Add a new member to your gym manually.</DrawerDescription>
-                        </DrawerHeader>
-                        <div className="p-4 space-y-4">
+
+                <DrawerContent className="rounded-t-[32px]">
+                    <div className="mx-auto w-full max-w-sm pb-8">
+                        <div className="p-6 bg-zinc-50/50 border-b border-zinc-100 mb-4">
+                            <DrawerHeader className="p-0 text-left">
+                                <DrawerTitle className="text-xl font-bold">Add New Member</DrawerTitle>
+                                <DrawerDescription>Create a new membership manually.</DrawerDescription>
+                            </DrawerHeader>
+                        </div>
+
+                        <div className="px-6 space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
+                                <Label htmlFor="name" className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Full Name</Label>
                                 <Input
                                     id="name"
-                                    placeholder="John Doe"
+                                    placeholder="e.g. Rahul Kumar"
                                     value={newMember.name}
                                     onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                                    className="h-12 rounded-xl border-zinc-200 focus:border-zinc-900 focus:ring-0"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
+                                <Label htmlFor="phone" className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Phone Number</Label>
                                 <Input
                                     id="phone"
-                                    placeholder="+91 9876543210"
+                                    placeholder="e.g. 9876543210"
                                     value={newMember.phone}
                                     onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                                    className="h-12 rounded-xl border-zinc-200 focus:border-zinc-900 focus:ring-0"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="plan">Subscription Plan</Label>
+                                <Label htmlFor="plan" className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Subscription Plan</Label>
                                 <Select
                                     value={newMember.planId}
                                     onValueChange={(val) => setNewMember({ ...newMember, planId: val })}
                                 >
-                                    <SelectTrigger id="plan">
+                                    <SelectTrigger id="plan" className="h-12 rounded-xl border-zinc-200">
                                         <SelectValue placeholder="Select a plan" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {plans.length === 0 ? (
                                             <div className="p-4 text-center text-sm text-zinc-500">
-                                                No plans available. Create one first.
+                                                No plans available.
+                                                <Button variant="link" onClick={() => window.location.href = '/owner/plans'}>Create Plan</Button>
                                             </div>
                                         ) : (
                                             plans.map((plan) => (
                                                 <SelectItem key={plan.id} value={plan.id}>
-                                                    {plan.name} - ₹{plan.price}
+                                                    <span className="font-semibold text-zinc-900">{plan.name}</span>
+                                                    <span className="text-zinc-500 ml-2">₹{plan.price}</span>
                                                 </SelectItem>
                                             ))
                                         )}
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                        <DrawerFooter>
-                            <Button onClick={handleAddMember} disabled={addMemberMutation.isPending}>
-                                {addMemberMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Add Member
+
+                            <Button onClick={handleAddMember} disabled={addMemberMutation.isPending} className="w-full h-14 rounded-2xl text-base font-bold bg-zinc-900 mt-4">
+                                {addMemberMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Create Member"}
                             </Button>
-                            <DrawerClose asChild>
-                                <Button variant="outline">Cancel</Button>
-                            </DrawerClose>
-                        </DrawerFooter>
+                        </div>
                     </div>
                 </DrawerContent>
             </Drawer>
 
+            {/* Confirmation Dialog */}
             <AlertDialog open={!!memberToActivate} onOpenChange={(open) => !open && setMemberToActivate(null)}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl w-[90%] max-w-sm">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Activate Subscription?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to manually activate this subscription?
+                            This will mark the user as active and start their plan validity from today.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmActivate} className="bg-zinc-900 hover:bg-zinc-800">Activate</AlertDialogAction>
+                    <AlertDialogFooter className="flex-row gap-2 justify-end">
+                        <AlertDialogCancel className="mt-0 flex-1 rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmActivate} className="flex-1 bg-zinc-900 hover:bg-zinc-800 rounded-xl">Activate</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

@@ -16,8 +16,11 @@ export function useNotificationsQuery() {
         queryFn: async () => {
             const res = await notificationsAPI.getAll();
             const data = res.data.data || res.data;
+            // Handle paginated response structure
+            const notifications = data.notifications?.data || data.notifications || [];
+
             return {
-                notifications: data.notifications as Notification[],
+                notifications: notifications as Notification[],
                 unreadCount: data.unreadCount as number
             };
         }
