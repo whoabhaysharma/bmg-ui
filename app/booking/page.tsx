@@ -41,7 +41,7 @@ export default function BookingPage() {
 
     // State
     const [loading, setLoading] = useState(true);
-    const [step, setStep] = useState<'login' | 'select-gym' | 'select-plan'>('login');
+    const [step, setStep] = useState<'login' | 'select-gym' | 'select-plan' | 'success'>('login');
     const [gyms, setGyms] = useState<Gym[]>([]);
     const [plans, setPlans] = useState<Plan[]>([]);
     const [selectedGym, setSelectedGym] = useState<string>('');
@@ -73,7 +73,14 @@ export default function BookingPage() {
                     const plansRes = await axios.get(`${API_URL}/plans?gymId=${gymId}`, {
                         headers: { Authorization: `Bearer ${sessionToken}` }
                     });
-                    setPlans(plansRes.data.data);
+                    const data = plansRes.data.data;
+                    if (Array.isArray(data)) {
+                        setPlans(data);
+                    } else if (data && Array.isArray(data.data)) {
+                        setPlans(data.data);
+                    } else {
+                        setPlans([]);
+                    }
 
                     if (planId) {
                         setSelectedPlan(planId);
@@ -102,7 +109,14 @@ export default function BookingPage() {
             const res = await axios.get(`${API_URL}/gyms`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
-            setGyms(res.data.data);
+            const data = res.data.data;
+            if (Array.isArray(data)) {
+                setGyms(data);
+            } else if (data && Array.isArray(data.data)) {
+                setGyms(data.data);
+            } else {
+                setGyms([]);
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -119,7 +133,14 @@ export default function BookingPage() {
             const res = await axios.get(`${API_URL}/plans?gymId=${gymId}`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
-            setPlans(res.data.data);
+            const data = res.data.data;
+            if (Array.isArray(data)) {
+                setPlans(data);
+            } else if (data && Array.isArray(data.data)) {
+                setPlans(data.data);
+            } else {
+                setPlans([]);
+            }
             setStep('select-plan');
         } catch (error) {
             toast.error("Couldn't fetch plans");
@@ -152,9 +173,9 @@ export default function BookingPage() {
                 description: `${plan!.name} Membership`,
                 order_id: orderId,
                 handler: async function (response: any) {
-                    // Webhook handles verification. We just redirect.
-                    toast.success('Payment Successful', { description: 'Your membership is being activated.' });
-                    router.push('/user/dashboard');
+                    // Webhook handles verification.
+                    setStep('success');
+                    toast.success('Payment Successful', { description: 'Your membership is active!' });
                 },
                 modal: {
                     ondismiss: function () {
@@ -353,6 +374,30 @@ export default function BookingPage() {
                                 </>
                             )}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Step 3: Success */}
+            {step === 'success' && (
+                <div className="flex h-screen flex-col items-center justify-center bg-white p-6 text-center">
+                    <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-50 text-green-500">
+                        <Check className="h-12 w-12" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900">You're In! 🎉</h1>
+                    <p className="mt-2 text-gray-500 max-w-xs mx-auto">
+                        Your membership has been activated successfully. Get ready to crush your goals!
+                    </p>
+                    <div className="mt-8 w-full max-w-xs space-y-3">
+                        <button
+                            onClick={() => router.push('/user/dashboard')}
+                            className="w-full rounded-2xl bg-black py-4 text-lg font-bold text-white shadow-lg active:scale-[0.98] transition-transform"
+                        >
+                            Go to Dashboard
+                        </button>
+                        <p className="text-xs text-gray-400">
+                            You can check your access code in the dashboard.
+                        </p>
                     </div>
                 </div>
             )}
