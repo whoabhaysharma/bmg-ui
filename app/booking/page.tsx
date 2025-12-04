@@ -49,7 +49,7 @@ export default function BookingPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [user, setUser] = useState<any>(null);
 
-    // 1. Logic: Login
+    // 1. Logic: Login & Auto-selection
     useEffect(() => {
         const login = async () => {
             if (!token) {
@@ -63,15 +63,37 @@ export default function BookingPage() {
                 localStorage.setItem('user', JSON.stringify(user));
                 setUser(user);
 
-                setStep('select-gym');
-                fetchGyms(sessionToken);
+                // Check for pre-selected gym and plan
+                const gymId = searchParams.get('gymId');
+                const planId = searchParams.get('planId');
+
+                if (gymId) {
+                    setSelectedGym(gymId);
+                    // Fetch plans for this gym
+                    const plansRes = await axios.get(`${API_URL}/plans?gymId=${gymId}`, {
+                        headers: { Authorization: `Bearer ${sessionToken}` }
+                    });
+                    setPlans(plansRes.data.data);
+
+                    if (planId) {
+                        setSelectedPlan(planId);
+                        setStep('select-plan');
+                        // Optional: Auto-scroll to payment or trigger it? 
+                        // For now, let user confirm.
+                    } else {
+                        setStep('select-plan');
+                    }
+                } else {
+                    setStep('select-gym');
+                    fetchGyms(sessionToken);
+                }
             } catch (error) {
                 toast.error('Invalid Link', { description: 'This magic link has expired.' });
                 setLoading(false);
             }
         };
         login();
-    }, [token]);
+    }, [token, searchParams]);
 
     // 2. Logic: Fetch Gyms
     const fetchGyms = async (authToken: string) => {
