@@ -1,16 +1,13 @@
 'use client'
 
-import { Activity, Bell, User, Calendar, CreditCard, Wallet, Users, AlertCircle, ArrowUpRight } from "lucide-react"
+import { Activity, User, Calendar, CreditCard, Wallet, Users, AlertCircle, ArrowUpRight } from "lucide-react"
 // SHADCN Drawer import
 import {
     Drawer,
-    DrawerTrigger,
     DrawerContent,
-    DrawerFooter,
     DrawerHeader,
     DrawerTitle,
     DrawerDescription,
-    DrawerClose,
 } from "@/components/ui/drawer";
 import { useState } from "react";
 import { useOwnerStore } from "@/lib/store/ownerStore";
@@ -20,9 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow, isPast } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useNotificationsQuery, useMarkNotificationReadMutation, useMarkAllNotificationsReadMutation } from "@/lib/hooks/queries/useNotifications";
 import { useGymStatsQuery, useCheckInMutation } from "@/lib/hooks/queries/useDashboard";
 import { cn } from "@/lib/utils";
+import { NotificationDrawer } from "@/components/dashboard/NotificationDrawer";
 
 // ---------------------------------------
 // Types
@@ -50,13 +47,6 @@ export function OwnerHeader() {
     const { currentGym } = useOwnerStore();
     const user = { name: currentGym?.ownerName || 'Gym Owner', avatar: 'GO' };
 
-    const { data, isLoading } = useNotificationsQuery();
-    const markReadMutation = useMarkNotificationReadMutation();
-    const markAllReadMutation = useMarkAllNotificationsReadMutation();
-
-    const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
-    const unreadCount = typeof data?.unreadCount === 'number' ? data.unreadCount : 0;
-
     return (
         <header className={'bg-transparent pt-6 pb-2'}>
             <div className="flex items-center justify-between max-w-md mx-auto w-full relative">
@@ -76,82 +66,7 @@ export function OwnerHeader() {
 
                 {/* Notification Drawer */}
                 <div className="flex items-center gap-2 relative">
-                    <Drawer>
-                        <DrawerTrigger asChild>
-                            <button className="p-2.5 rounded-full bg-white text-zinc-600 shadow-sm border border-zinc-100 hover:bg-zinc-50 transition-transform active:scale-95 relative outline-none focus:ring-2 focus:ring-zinc-200">
-                                <Bell className="w-5 h-5" strokeWidth={2} />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-rose-500 border border-white animate-pulse"></span>
-                                )}
-                            </button>
-                        </DrawerTrigger>
-
-                        <DrawerContent className="max-w-md mx-auto rounded-t-[32px] p-0 overflow-hidden">
-                            <div className="p-6 bg-zinc-50/80 backdrop-blur-sm border-b border-zinc-100">
-                                <DrawerHeader className="p-0 text-left">
-                                    <DrawerTitle className="text-xl font-bold text-zinc-900">Notifications</DrawerTitle>
-                                    <DrawerDescription>You have {unreadCount} unread messages.</DrawerDescription>
-                                </DrawerHeader>
-                            </div>
-
-                            <div className="px-4 py-4 max-h-[50vh] overflow-y-auto bg-[#FAFAFA]">
-                                {isLoading ? (
-                                    <div className="flex justify-center py-8">
-                                        <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
-                                    </div>
-                                ) : notifications.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
-                                        <Bell className="w-8 h-8 mb-3 opacity-20" />
-                                        <p className="text-sm">No notifications yet.</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {notifications.map((notif) => (
-                                            <div
-                                                key={notif.id}
-                                                onClick={() => !notif.isRead && markReadMutation.mutate(notif.id)}
-                                                className={cn(
-                                                    "p-4 rounded-2xl border transition-all cursor-pointer flex gap-4 items-start relative overflow-hidden",
-                                                    !notif.isRead
-                                                        ? "bg-white border-blue-100 shadow-[0_4px_20px_-4px_rgba(59,130,246,0.1)]"
-                                                        : "bg-white border-zinc-100 opacity-80"
-                                                )}
-                                            >
-
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className={cn("text-sm", !notif.isRead ? "font-bold text-zinc-900" : "font-medium text-zinc-700")}>
-                                                            {notif.title}
-                                                        </h4>
-                                                        <span className="text-[10px] font-medium text-zinc-400 whitespace-nowrap ml-2">
-                                                            {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{notif.message}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <DrawerFooter className="bg-white border-t border-zinc-100 pt-4 pb-8">
-                                <div className="flex gap-3">
-                                    <DrawerClose asChild>
-                                        <Button variant="outline" className="flex-1 rounded-xl h-12 font-semibold">
-                                            Close
-                                        </Button>
-                                    </DrawerClose>
-                                    <Button
-                                        onClick={() => markAllReadMutation.mutate()}
-                                        className="flex-1 bg-zinc-900 text-white rounded-xl h-12 font-bold shadow-lg shadow-zinc-200 hover:bg-zinc-800"
-                                    >
-                                        Mark all read
-                                    </Button>
-                                </div>
-                            </DrawerFooter>
-                        </DrawerContent>
-                    </Drawer>
+                    <NotificationDrawer />
                 </div>
             </div>
         </header>
@@ -454,7 +369,6 @@ export default function DashboardContent() {
             <Drawer open={isCheckInDrawerOpen} onOpenChange={resetCheckInState}>
                 <DrawerContent className="max-w-md mx-auto rounded-t-[32px] max-h-[90vh]">
                     <div className="p-6 pb-2 bg-zinc-50/50">
-                        <div className="w-12 h-1 bg-zinc-300 rounded-full mx-auto mb-6 opacity-50" />
                         <DrawerHeader className="p-0 text-left">
                             <DrawerTitle className="text-xl font-bold text-zinc-900">Member Check-in</DrawerTitle>
                             <DrawerDescription>

@@ -15,13 +15,31 @@ export function useNotificationsQuery() {
         queryKey: ['notifications'],
         queryFn: async () => {
             const res = await notificationsAPI.getAll();
-            const data = res.data.data || res.data;
-            // Handle paginated response structure
-            const notifications = data.notifications?.data || data.notifications || [];
+            console.log('Raw Notifications Response:', res.data);
+
+            const body = res.data;
+            let notifications: any[] = [];
+            let unreadCount = 0;
+
+            // Structure: { success: true, data: { data: [...], meta: {...} } }
+            if (body?.data?.data && Array.isArray(body.data.data)) {
+                notifications = body.data.data;
+                unreadCount = body.data.meta?.unreadCount || 0;
+            }
+            // Fallback for different structures
+            else if (body?.data?.notifications && Array.isArray(body.data.notifications)) {
+                notifications = body.data.notifications;
+                unreadCount = body.data.unreadCount || 0;
+            }
+            else if (Array.isArray(body?.data)) {
+                notifications = body.data;
+            }
+
+            console.log('Parsed Notifications:', notifications);
 
             return {
                 notifications: notifications as Notification[],
-                unreadCount: data.unreadCount as number
+                unreadCount: unreadCount as number
             };
         }
     });
