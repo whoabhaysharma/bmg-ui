@@ -110,6 +110,7 @@ export const settlementsAPI = {
   create: (data: { gymId: string }) => apiClient.post('/settlements', data),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getAll: (params?: Record<string, any>) => apiClient.get('/settlements', { params }),
+  getUnsettledSummary: () => apiClient.get('/settlements/unsettled-summary'),
   getUnsettledAmount: (gymId: string) => apiClient.get(`/settlements/unsettled?gymId=${gymId}`),
   getById: (id: string) => apiClient.get(`/settlements/${id}`),
 };

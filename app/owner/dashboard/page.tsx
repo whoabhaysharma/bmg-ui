@@ -244,7 +244,7 @@ export default function DashboardContent() {
     const router = useRouter();
     const { currentGym, isLoading: isGymLoading } = useOwnerStore();
 
-    const { data: stats, isLoading: isStatsLoading } = useGymStatsQuery(currentGym?.id);
+    const { data: stats, isLoading: statsLoading, isError: statsError } = useGymStatsQuery(currentGym?.id);
     const checkInMutation = useCheckInMutation(currentGym?.id || '');
 
     // Check-in Verification State
@@ -304,7 +304,7 @@ export default function DashboardContent() {
         return { label: `Expires ${relative}`, color: 'text-emerald-700', bg: 'bg-emerald-50', expired: false };
     };
 
-    const showLoader = isGymLoading || (currentGym && isStatsLoading && !stats);
+    const showLoader = isGymLoading || (currentGym && statsLoading && !stats);
 
     if (showLoader) {
         return (
@@ -312,6 +312,22 @@ export default function DashboardContent() {
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
             </div>
         )
+    }
+
+    if (statsError) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
+                <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-center">
+                    <p className="font-semibold">Failed to load dashboard stats.</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-2 text-sm underline hover:text-red-700"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     const displayStats = stats || {

@@ -127,13 +127,29 @@ function RecentActivityList({ items }: { items: { type: string, title: string, t
 // Main Dashboard Component
 // ---------------------------------------
 export default function AdminDashboard() {
-  const { data: stats, isLoading } = useAdminStatsQuery();
+  const { data: stats, isLoading, isError } = useAdminStatsQuery();
   const router = useRouter();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
         <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] p-4">
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-center">
+          <p className="font-semibold">Failed to load dashboard stats.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm underline hover:text-red-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }

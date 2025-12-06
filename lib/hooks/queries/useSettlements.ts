@@ -55,3 +55,24 @@ export function useUnsettledAmountQuery(gymId?: string) {
         enabled: !!gymId,
     });
 }
+
+export function useUnsettledSummaryQuery() {
+    return useQuery({
+        queryKey: ['unsettledSummary'],
+        queryFn: async () => {
+            const response = await settlementsAPI.getUnsettledSummary();
+            return response.data.data;
+        },
+    });
+}
+export function useSettlementByIdQuery(id?: string) {
+    return useQuery({
+        queryKey: ['settlement', id],
+        queryFn: async () => {
+            if (!id) return null;
+            const response = await settlementsAPI.getById(id);
+            return response.data.data;
+        },
+        enabled: !!id,
+    });
+}
