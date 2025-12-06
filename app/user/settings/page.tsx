@@ -17,7 +17,9 @@ import {
   Loader2,
   Edit2,
   Camera,
-  Dumbbell
+  Dumbbell,
+  Activity,
+  ArrowUpRight
 } from 'lucide-react';
 import { toast } from "sonner"
 import {
@@ -154,6 +156,23 @@ export default function SettingsPage() {
 
   const menuItems = [
     {
+      section: 'My Activity',
+      items: [
+        {
+          title: 'My Subscriptions',
+          description: 'View active plans and history',
+          icon: Activity,
+          onClick: () => router.push('/user/subscriptions')
+        },
+        {
+          title: 'Payment History',
+          description: 'View past transactions',
+          icon: ArrowUpRight,
+          onClick: () => router.push('/user/payments')
+        },
+      ]
+    },
+    {
       section: 'Account',
       items: [
         { title: 'Payment Methods', description: 'Manage your payment options', icon: CreditCard },
@@ -165,9 +184,6 @@ export default function SettingsPage() {
             icon: Dumbbell,
             onClick: () => {
               if (user?.gymsOwned && user.gymsOwned.length > 0) {
-                // For now, just show an alert or navigate if we had a page
-                // The requirement says "allow only one gym creation for now"
-                // So if they have one, maybe we just say "You have a gym: [Name]"
                 toast.info(`You manage: ${user.gymsOwned[0].name}`);
               } else {
                 setIsCreatingGym(true);
@@ -203,8 +219,8 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
       </div>
     );
   }

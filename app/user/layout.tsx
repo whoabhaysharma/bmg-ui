@@ -17,10 +17,15 @@ export function UserFooter() {
 
     const navItems = [
         { icon: Home, label: 'Home', path: '/user/dashboard' },
+        { icon: Activity, label: 'Subscriptions', path: '/user/subscriptions' },
         { icon: Compass, label: 'Explore', path: '/user/explore' },
-        { icon: Activity, label: 'Activity', path: '/user/activity' },
-        { icon: Settings, label: 'Profile', path: '/user/settings' },
+        { icon: Settings, label: 'Settings', path: '/user/settings' },
     ];
+
+    // Hide footer on gym details page
+    if (currentPathname?.startsWith('/user/gyms/')) {
+        return null;
+    }
 
     return (
         <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none">

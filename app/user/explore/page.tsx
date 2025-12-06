@@ -22,7 +22,15 @@ export default function ExplorePage() {
     const fetchGyms = async () => {
       try {
         const res = await gymsAPI.getAll();
-        setGyms(res.data.data || res.data);
+        // Handle nested data structure: res.data (axios) -> data (api wrapper) -> data (pagination)
+        const responseData = res.data;
+        if (responseData.data && Array.isArray(responseData.data.data)) {
+          setGyms(responseData.data.data);
+        } else if (Array.isArray(responseData.data)) {
+          setGyms(responseData.data);
+        } else {
+          setGyms([]);
+        }
       } catch (error) {
         console.error("Failed to fetch gyms:", error);
       } finally {

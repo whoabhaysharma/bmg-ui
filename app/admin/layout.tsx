@@ -19,6 +19,7 @@ export function AdminFooter() {
         { icon: Building2, label: 'Gyms', path: '/admin/gyms' },
         { icon: IndianRupee, label: 'Settlements', path: '/admin/settlements' },
         { icon: Users, label: 'Users', path: '/admin/users' },
+        { icon: Settings, label: 'Settings', path: '/admin/settings' },
     ];
 
     return (
