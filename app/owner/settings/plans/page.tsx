@@ -92,6 +92,17 @@ const formatDuration = (value: number, unit: PlanType) => {
 }
 
 // ---------------------------------------
+// Helper: Extract Plans from Response
+// ---------------------------------------
+const extractPlansFromResponse = (response: any): GymSubscriptionPlan[] => {
+    const body = response.data || response;
+    if (Array.isArray(body)) return body;
+    if (Array.isArray(body?.data)) return body.data;
+    if (Array.isArray(body?.data?.data)) return body.data.data;
+    return [];
+}
+
+// ---------------------------------------
 // Component: Plan Item Card
 // ---------------------------------------
 function PlanItem({ plan, onToggleStatus, onDelete }: {
@@ -207,8 +218,7 @@ export default function MembershipPlansPage() {
             try {
                 // Get Plans
                 const plansRes = await plansAPI.getByGymId(currentGym.id)
-                const fetchedPlans = plansRes.data.data || plansRes.data
-                setPlans(fetchedPlans)
+                setPlans(extractPlansFromResponse(plansRes))
 
             } catch (error) {
                 console.error("Failed to fetch plans:", error)
@@ -261,7 +271,7 @@ export default function MembershipPlansPage() {
 
             // Refresh list
             const plansRes = await plansAPI.getByGymId(currentGym.id)
-            setPlans(plansRes.data.data || plansRes.data)
+            setPlans(extractPlansFromResponse(plansRes))
 
             toast.success("Plan created successfully")
         } catch (error) {
@@ -282,7 +292,7 @@ export default function MembershipPlansPage() {
 
             // Refresh list
             const plansRes = await plansAPI.getByGymId(currentGym.id)
-            setPlans(plansRes.data.data || plansRes.data)
+            setPlans(extractPlansFromResponse(plansRes))
         } catch (error) {
             console.error("Failed to update plan status:", error)
             toast.error("Failed to update plan status")
@@ -296,7 +306,7 @@ export default function MembershipPlansPage() {
             await plansAPI.delete(planToDelete);
             // Refresh list
             const plansRes = await plansAPI.getByGymId(currentGym.id);
-            setPlans(plansRes.data.data || plansRes.data);
+            setPlans(extractPlansFromResponse(plansRes));
             toast.success("Plan deleted successfully");
         } catch (error) {
             console.error("Failed to delete plan:", error);
@@ -306,7 +316,7 @@ export default function MembershipPlansPage() {
         }
     }
 
-    const filteredPlans = plans.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+    const filteredPlans = plans.filter(p => p?.name && p.name.toLowerCase().includes(search.toLowerCase()));
 
     // Show loading state
     if (loading) {

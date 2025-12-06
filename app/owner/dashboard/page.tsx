@@ -342,6 +342,7 @@ export default function DashboardContent() {
         phone?: string;
         plan?: string;
         expiryDate?: string;
+        lastCheckIn?: string;
     } | null>(null);
 
     const handleVerifyCheckIn = async () => {
@@ -356,7 +357,8 @@ export default function DashboardContent() {
                     user: data.user?.name || 'Unknown User',
                     phone: data.user?.mobileNumber,
                     plan: data.subscription?.plan?.name,
-                    expiryDate: data.subscription?.endDate
+                    expiryDate: data.subscription?.endDate,
+                    lastCheckIn: data.lastCheckIn
                 });
                 setAccessCode('');
             },
@@ -543,6 +545,16 @@ export default function DashboardContent() {
                                                             <Calendar className="w-3.5 h-3.5" />
                                                             <span className="font-bold text-xs">{getExpiryInfo(checkInResult.expiryDate).label}</span>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {checkInResult.lastCheckIn && (
+                                                <div className="mt-4 pt-4 border-t border-zinc-100">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs font-medium text-zinc-500">Last Check-in</span>
+                                                        <span className="text-xs font-bold text-zinc-900">
+                                                            {formatDistanceToNow(new Date(checkInResult.lastCheckIn), { addSuffix: true })}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             )}

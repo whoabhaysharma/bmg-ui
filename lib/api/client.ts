@@ -43,7 +43,7 @@ export const authAPI = {
 export const gymsAPI = {
   create: (data: { name: string; address: string; ownerId?: string }) =>
     apiClient.post('/gyms', data),
-  getAll: () => apiClient.get('/gyms'),
+  getAll: (params?: { verified?: boolean; page?: number; limit?: number }) => apiClient.get('/gyms', { params }),
   getMyOwned: () => apiClient.get('/gyms/me/owned'),
   getById: (id: string) => apiClient.get(`/gyms/${id}`),
   update: (id: string, data: { name?: string; address?: string }) =>
@@ -81,8 +81,8 @@ export const usersAPI = {
   getMe: () => apiClient.get('/users/me/profile'),
   updateMe: (data: { name: string }) => apiClient.put('/users/me/profile', data),
   getById: (id: string) => apiClient.get(`/users/${id}`),
-  getAll: (page = 1, limit = 10, includeDeleted = false) =>
-    apiClient.get(`/users?page=${page}&limit=${limit}&includeDeleted=${includeDeleted}`),
+  getAll: (params?: { page?: number; limit?: number; includeDeleted?: boolean; search?: string; role?: string }) =>
+    apiClient.get('/users', { params }),
   update: (id: string, data: { name: string }) => apiClient.put(`/users/${id}`, data),
   delete: (id: string) => apiClient.delete(`/users/${id}`),
   restore: (id: string) => apiClient.post(`/users/${id}/restore`),
@@ -126,6 +126,14 @@ export const notificationsAPI = {
   getAll: () => apiClient.get('/notifications'),
   markAsRead: (id: string) => apiClient.patch(`/notifications/${id}/read`),
   markAllAsRead: () => apiClient.patch('/notifications/read-all'),
+};
+
+export const adminAPI = {
+  getDashboardStats: () => apiClient.get('/admin/dashboard-stats'),
+};
+
+export const auditLogsAPI = {
+  getAll: (params?: { gymId?: string; page?: number; limit?: number }) => apiClient.get('/audit-logs', { params }),
 };
 
 export default apiClient;
