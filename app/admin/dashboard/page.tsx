@@ -2,6 +2,7 @@
 
 import { Users, Building2, Wallet, Activity, ArrowUpRight, ShieldCheck } from "lucide-react"
 import { useAdminStatsQuery } from "@/lib/hooks/queries/useAdmin";
+import { useUnsettledSummaryQuery } from "@/lib/hooks/queries/useSettlements";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -128,6 +129,7 @@ function RecentActivityList({ items }: { items: { type: string, title: string, t
 // ---------------------------------------
 export default function AdminDashboard() {
   const { data: stats, isLoading, isError } = useAdminStatsQuery();
+  const { data: unsettledSummary } = useUnsettledSummaryQuery();
   const router = useRouter();
 
   if (isLoading) {
@@ -167,9 +169,10 @@ export default function AdminDashboard() {
 
       <div className="space-y-4">
         {/* Revenue Card (Primary) */}
+        {/* Unsettled Amount Card (Primary) */}
         <StatsCard
-          label="Total Revenue"
-          value={`₹${displayStats.totalRevenue.toLocaleString()}`}
+          label="Total Unsettled"
+          value={`₹${(unsettledSummary || []).reduce((acc: number, curr: any) => acc + curr.amount, 0).toLocaleString()}`}
           icon={<Wallet className="w-5 h-5" />}
           variant="primary"
         />

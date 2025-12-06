@@ -6,7 +6,8 @@ import {
     useCreateSettlementMutation,
     useUnsettledAmountQuery,
     useUnsettledSummaryQuery,
-    useSettlementByIdQuery
+    useSettlementByIdQuery,
+    type Settlement
 } from '@/lib/hooks/queries/useSettlements';
 import {
     Loader2,
@@ -70,7 +71,7 @@ export default function AdminSettlementsPage() {
 
     const createSettlementMutation = useCreateSettlementMutation();
 
-    const settlements = settlementsData?.data || [];
+    const settlements: Settlement[] = (settlementsData as any)?.data || (Array.isArray(settlementsData) ? settlementsData : []) || [];
     const pendingList = unsettledSummary || [];
     const totalOutstanding = pendingList.reduce((acc: number, curr: any) => acc + curr.amount, 0);
 
@@ -220,6 +221,14 @@ export default function AdminSettlementsPage() {
                     <TabsContent value="history" className="space-y-3 outline-none animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
                         {isHistoryLoading ? (
                             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-zinc-300 w-8 h-8" /></div>
+                        ) : settlements.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-center">
+                                <div className="h-16 w-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+                                    <ReceiptText className="w-8 h-8 text-zinc-300" />
+                                </div>
+                                <h3 className="font-semibold text-zinc-900">No history found</h3>
+                                <p className="text-sm text-zinc-500 mt-1">Past settlements will appear here.</p>
+                            </div>
                         ) : (
                             settlements.map((settlement) => (
                                 <div

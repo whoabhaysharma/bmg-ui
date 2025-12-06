@@ -23,7 +23,7 @@ export function useSettlementsQuery(params?: { status?: string; gymId?: string; 
         queryKey: ['settlements', params],
         queryFn: async () => {
             const response = await settlementsAPI.getAll(params);
-            return response.data.data as { data: Settlement[]; meta: any };
+            return response.data as { data: Settlement[]; meta: any };
         },
     });
 }
