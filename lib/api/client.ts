@@ -133,7 +133,9 @@ export const adminAPI = {
 };
 
 export const auditLogsAPI = {
-  getAll: (params?: { gymId?: string; page?: number; limit?: number }) => apiClient.get('/audit-logs', { params }),
+  getAll: (params?: { gymId?: string; page?: number; limit?: number }) => apiClient.get('/audit/admin/all', { params }),
+  getGymLogs: (gymId: string, params?: { page?: number; limit?: number }) => apiClient.get(`/audit/gym/${gymId}`, { params }),
+  getMyLogs: (params?: { page?: number; limit?: number }) => apiClient.get('/audit/me', { params }),
 };
 
 export default apiClient;

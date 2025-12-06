@@ -15,7 +15,8 @@ import {
     ToggleRight,
     Edit2,
     Camera,
-    Loader2
+    Loader2,
+    Activity
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -278,6 +279,12 @@ export default function SettingsPage() {
                                 setIsCreatingGym(true);
                             }
                         }}
+                    />
+                    <SettingItem
+                        icon={Activity}
+                        label="Activities"
+                        sub="Audit logs & history"
+                        onClick={() => router.push('/owner/settings/activities')}
                     />
                 </SettingsSection>
 

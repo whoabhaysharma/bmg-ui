@@ -14,9 +14,13 @@ export function useAuditLogsQuery(params?: { gymId?: string; page?: number; limi
     return useQuery({
         queryKey: ['auditLogs', params],
         queryFn: async () => {
-            const response = await auditLogsAPI.getAll(params);
-            // response.data is the body. sendSuccess wraps data in 'data' field.
-            return response.data?.data || [];
+            if (params?.gymId) {
+                const response = await auditLogsAPI.getGymLogs(params.gymId, params);
+                return response.data;
+            } else {
+                const response = await auditLogsAPI.getAll(params);
+                return response.data;
+            }
         },
     });
 }
