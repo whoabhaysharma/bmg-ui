@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Compass, Activity, Settings } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useKeyboard } from '@/lib/hooks/use-keyboard';
 
 // --- Modern Floating Footer Component ---
 export function UserFooter() {
     const router = useRouter();
     const currentPathname = usePathname();
+    const isKeyboardOpen = useKeyboard();
 
     const [activeTab, setActiveTab] = useState(currentPathname);
 
@@ -22,8 +24,8 @@ export function UserFooter() {
         { icon: Settings, label: 'Settings', path: '/user/settings' },
     ];
 
-    // Hide footer on gym details page
-    if (currentPathname?.startsWith('/user/gyms/')) {
+    // Hide footer on gym details page or if keyboard is open
+    if (currentPathname?.startsWith('/user/gyms/') || isKeyboardOpen) {
         return null;
     }
 
