@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Building2, Users, Settings, IndianRupee } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useKeyboard } from '@/lib/hooks/use-keyboard';
 
 export function AdminFooter() {
     const router = useRouter();
     const currentPathname = usePathname();
+    const isKeyboardOpen = useKeyboard();
 
     const [activeTab, setActiveTab] = useState(currentPathname);
 
@@ -21,6 +23,8 @@ export function AdminFooter() {
         { icon: Users, label: 'Users', path: '/admin/users' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
     ];
+
+    if (isKeyboardOpen) return null;
 
     return (
         <div className="fixed bottom-3 left-0 right-0 z-50 flex justify-center pointer-events-none">

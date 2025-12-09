@@ -5,6 +5,7 @@ import { Home, User, Settings, IndianRupee } from 'lucide-react';
 
 // 🛑 FIX: Use real Next.js navigation hooks instead of mock functions
 import { usePathname, useRouter } from 'next/navigation';
+import { useKeyboard } from '@/lib/hooks/use-keyboard';
 // Note: Ensure you are running this within a Next.js App Router environment 
 // where 'next/navigation' is available.
 
@@ -12,6 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 export function OwnerFooter() {
   const router = useRouter();
   const currentPathname = usePathname(); // Get the actual current path
+  const isKeyboardOpen = useKeyboard();
 
   // 1. Initialize activeTab with the current URL pathname
   const [activeTab, setActiveTab] = useState(currentPathname);
@@ -28,6 +30,8 @@ export function OwnerFooter() {
     { icon: IndianRupee, label: 'Payments', path: '/owner/payments' },
     { icon: Settings, label: 'Profile', path: '/owner/settings' },
   ];
+
+  if (isKeyboardOpen) return null;
 
   return (
     <div className="fixed bottom-3 left-0 right-0 z-50 flex justify-center pointer-events-none">
